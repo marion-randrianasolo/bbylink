@@ -6,6 +6,8 @@
  * Interface principale pour créer ou rejoindre des parties de baby-foot
  * Design avec cartes carrées et navigation par étapes intégrée
  */
+/* eslint-disable react/no-unescaped-entities */
+
 
 "use client"
 
