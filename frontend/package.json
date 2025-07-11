@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "export-db": "node scripts/export-schema.js",
-    "setup-db": "npx prisma generate && npx prisma db push && npx prisma db seed"
+    "setup-db": "npx prisma generate && npx prisma db push && npx prisma db seed",
+    "setup-db:win": "prisma generate --binary-targets native && prisma db push && prisma db seed",
+    "setup-db:pi":  "prisma generate --binary-targets native linux-arm-openssl-1.1.x && prisma db push && prisma db seed"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
