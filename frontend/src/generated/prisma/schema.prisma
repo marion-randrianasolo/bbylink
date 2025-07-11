@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native"]
+  engineType    = "binary"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String // SHA256 hash
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Future fields for complete profile
+  firstName    String?
+  lastName     String?
+  avatar       String?
+  jerseyNumber Int?
+  skillLevel   String?
+  position     String?
+  championship String?
+  xp           Int     @default(1250) // Valeur par défaut 1250 XP
+  coins        Int     @default(0) // Valeur par défaut 0 coins
+  elo          Int     @default(1000) // Valeur par défaut 1000 ELO
+
+  // Relations
+  hostedGames        Game[]       @relation("GameHost")
+  gameParticipations GamePlayer[]
+}
+
+model FoosballTable {
+  id          Int      @id @default(autoincrement())
+  name        String
+  location    String
+  isActive    Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  games Game[]
+}
+
+model Game {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  status     String    @default("waiting") // waiting, playing, finished, cancelled
+  gameMode   String    @default("1v1") // 1v1, 2v2, tournament
+  scoreLeft  Int       @default(0)
+  scoreRight Int       @default(0)
+  maxScore   Int       @default(10)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  // Relations
+  tableId Int
+  table   FoosballTable @relation(fields: [tableId], references: [id])
+
+  hostId Int
+  host   User @relation("GameHost", fields: [hostId], references: [id])
+
+  players GamePlayer[]
+}
+
+model GamePlayer {
+  id        Int     @id @default(autoincrement())
+  team      String // "left", "right"
+  position  String? // "defense", "attack" for 2v2
+  isGuest   Boolean @default(false)
+  guestName String?
+
+  // Relations
+  gameId Int
+  game   Game @relation(fields: [gameId], references: [id])
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+
+  @@unique([gameId, userId])
+}
