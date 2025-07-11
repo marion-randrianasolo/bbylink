@@ -68,11 +68,11 @@ class SocketService {
    * @param url - Socket.IO server URL (default: auto-detect based on hostname)
    */
   connect(url?: string): Promise<Socket> {
-    // Auto-detect server URL based on current hostname
+    const FLASK_API = process.env.NEXT_PUBLIC_FLASK_API_URL!
+    // Utilisation explicite de la variable d'env
     if (!url) {
-      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-      url = `http://${hostname}:5000`
-      console.log(`🔌 Auto-detected Socket.IO server URL: ${url}`)
+      url = FLASK_API
+      console.log(`🔌 Socket.IO server URL from env: ${url}`)
     }
     return new Promise((resolve, reject) => {
       if (this.socket && this.connected) {

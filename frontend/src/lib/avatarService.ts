@@ -7,15 +7,12 @@
 // Auto-detection de l'URL du serveur Flask
 const getFlaskServerUrl = () => {
   if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:5000'
-    } else {
-      // Utiliser l'IP détectée pour mobile
-      return `http://${hostname}:5000`
+    const FLASK_API = process.env.NEXT_PUBLIC_FLASK_API_URL!
+
+    /** Retourne l’URL de base de l’API Flask */
+    export function getAvatarBaseUrl() {
+        return FLASK_API
     }
-  }
-  return 'http://localhost:5000'
 }
 
 const FLASK_SERVER_URL = getFlaskServerUrl()

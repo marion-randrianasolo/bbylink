@@ -19,6 +19,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { socketService } from '@/lib/socket'
 import AvatarService from '@/lib/avatarService'
 
+const FLASK_API = process.env.NEXT_PUBLIC_FLASK_API_URL!
+
 interface GameData {
   id: number
   code: string
@@ -106,9 +108,9 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
     
     try {
       // Chercher la partie via Flask avec auto-détection hostname
-      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-      const serverUrl = `http://${hostname}:5000/api/games/${gameCode}`
-      console.log(`🔍 Searching game on: ${serverUrl}`)
+      // On utilise directement l’URL du back
+      const serverUrl = `${FLASK_API}/api/games/${gameCode}`
+      console.log(`🔍 Fetching game on: ${serverUrl}`)
       const response = await fetch(serverUrl)
       const data = await response.json()
 
