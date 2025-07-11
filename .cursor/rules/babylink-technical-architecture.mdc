@@ -1,0 +1,498 @@
+---
+alwaysApply: true
+---
+
+# BabyLink - Architecture Technique Complète
+
+## 🏗️ Architecture du Système
+
+### **Dual Architecture**: Frontend NextJS + Backend Flask IoT
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   FRONTEND      │    │   BACKEND       │    │   HARDWARE      │
+│   Next.js 15    │◄──►│   Flask 5000    │◄──►│   Arduino       │
+│   Port 3000     │    │   Socket.io     │    │   Sensors       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🗃️ Base de Données - SQLite avec Prisma
+
+### **Schema Principal** (`frontend/prisma/schema.prisma`)
+```sql
+-- Table User (seule table actuelle)
+CREATE TABLE "User" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "email" TEXT UNIQUE NOT NULL,
+    "name" TEXT NOT NULL, 
+    "password" TEXT NOT NULL,  -- SHA256 hash
+    "score" INTEGER DEFAULT 0,
+    "createdAt" DATETIME DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+```
+
+### **Configuration Prisma**
+- **Provider**: SQLite (`frontend/prisma/dev.db`)
+- **Client Output**: `frontend/src/generated/prisma`
+- **Seed**: `frontend/prisma/seed.ts` (4 utilisateurs test)
+- **Migrations**: `frontend/prisma/migrations/`
+
+### **Données de Test** (Mot de passe: `test123`)
+- messi@epsi.fr (2450 pts)
+- ronaldo@epsi.fr (1890 pts) 
+- neymar@epsi.fr (1650 pts)
+- mbappe@epsi.fr (1200 pts)
+
+## 🎯 Frontend - Next.js 15 Architecture
+
+### **Structure de Fichiers**
+```
+frontend/src/
+├── app/                 # App Router Next.js 15
+│   ├── api/auth/       # API Routes (login/register)
+│   ├── login/          # Page de connexion
+│   ├── page.tsx        # Dashboard principal
+│   ├── layout.tsx      # Layout racine + fonts
+│   └── globals.css     # Styles globaux + variables CSS
+├── components/
+│   ├── ui/            # Composants Shadcn/ui base
+│   ├── layout/        # Sidebar, AuthenticatedLayout
+│   └── babyfoot_component/ # Composants métier
+├── contexts/          # AuthContext (localStorage)
+└── lib/              # Utilities (Prisma, utils)
+```
+
+### **Stack Technique Frontend**
+- **Framework**: Next.js 15.3.5 + App Router
+- **Language**: TypeScript strict
+- **Styling**: Tailwind CSS 4 + CSS Modules
+- **Fonts**: IBM Plex Sans (Google) + NuberNext/Monument (local)
+- **State**: React Context + localStorage
+- **UI Components**: Radix UI + Lucide React icons
+- **Animation**: Framer Motion
+- **Database ORM**: Prisma Client
+
+### **Authentification**
+```typescript
+// Structure User interface
+interface User {
+  id: number
+  email: string
+  name: string
+  score: number
+  // Futurs champs pour profil complet:
+  firstName?: string
+  lastName?: string
+  avatar?: string
+  jerseyNumber?: number
+  skillLevel?: string
+  position?: string
+  championship?: string
+  xp?: number
+  coins?: number
+  elo?: number
+}
+```
+
+### **API Routes Next.js**
+- **POST `/api/auth/login`**: Authentification SHA256
+- **POST `/api/auth/register`**: Inscription utilisateur
+- Futur: `/api/games`, `/api/rankings`, `/api/players`
+
+## ⚙️ Backend IoT - Flask + Arduino
+
+### **Flask Server** (`app/app.py`)
+- **Port**: 5000
+- **WebSocket**: Socket.io pour temps réel
+- **Serial**: Communication Arduino via `/dev/ttyACM0`
+- **Routes**: 
+  - `GET /`: Interface HTML score
+  - `POST /reset`: Reset scores
+  - `WebSocket 'connect'`: Sync score initial
+
+### **Score Management**
+```python
+score = {'GAUCHE': 0, 'DROITE': 0}  # État global
+
+def emit_score():
+    socketio.emit('score_update', {
+        'left': score['GAUCHE'],
+        'right': score['DROITE']
+    })
+```
+
+### **Arduino Code** (`arduino/babylink/babylink.ino`)
+- **Pins**: 2 (gauche), 3 (droite), 5 (buzzer)
+- **Logic**: INPUT_PULLUP, détection LOW→HIGH
+- **Serial**: 9600 baud, envoi "GAUCHE"/"DROITE"
+- **Sound**: Buzzer 1000Hz, 150ms
+
+### **Hardware Setup**
+- Capteurs IR Adafruit
+- Arduino Uno/Nano
+- Buzzer actif
+- Raspberry Pi (serveur Flask)
+
+## 🎨 Design System
+
+### **Palette de Couleurs**
+```css
+:root {
+  --primary-dark: #0C0E14;    /* Background principal */
+  --accent-red: #EA1846;      /* CTA, highlights */
+  --text-white: #FDFFFF;      /* Texte principal */
+  --light-bg: #F7F7F7;        /* Backgrounds secondaires */
+}
+```
+
+### **Fonts CSS Variables**
+```css
+--font-ibm-plex-sans: 'IBM Plex Sans', sans-serif;
+--font-nubernext: 'NuberNext', sans-serif;  
+--font-monument: 'Monument Extended', sans-serif;
+```
+
+### **Layout Responsive**
+- **Desktop**: Sidebar 280px fixe + main content
+- **Mobile**: Sidebar overlay + burger menu
+- **CSS Grid**: `grid-rows-[auto_1fr_auto]` pour footer fixe
+
+## 🚀 Scripts & Commandes
+
+### **Frontend (Node.js)**
+```bash
+cd frontend/
+npm run dev          # Dev server (port 3000)
+npm run build        # Production build
+npm run lint         # ESLint
+npx prisma db push   # Sync schema → database
+npx prisma db seed   # Populate test data
+npx prisma generate  # Generate client types
+```
+
+### **Backend IoT (Python)**
+```bash
+cd app/
+python3 app.py       # Flask server (port 5000)
+# Prérequis: Arduino connecté sur /dev/ttyACM0
+```
+
+## 🔧 Configuration Files
+
+### **Dependencies Management**
+- **Frontend**: `frontend/package.json` (48 dépendances)
+- **Backend**: `requirements.txt` (4 dépendances Python)
+
+### **TypeScript Config**
+- `frontend/tsconfig.json`: Strict mode, path mapping
+- **ESLint**: `frontend/eslint.config.mjs` + `.eslintignore`
+
+### **Tailwind Setup**
+- `frontend/tailwind.config.ts`: CSS variables, fonts
+- `frontend/postcss.config.mjs`: PostCSS 4
+
+## 📡 Real-time Communication
+
+### **Socket.io Flow**
+```
+Arduino → Serial → Flask → Socket.io → Frontend
+  ↓          ↓        ↓         ↓         ↓
+"GAUCHE"  →  +1   →  emit   →  event  →  UI update
+```
+
+### **Event Types**
+- `score_update`: Envoi score temps réel
+- `connect`: Client connection (sync initial)
+
+## 🔒 Security & Auth
+
+### **Password Hashing**
+```typescript
+// Même logique partout (seed, login, register)
+function hashPassword(password: string): string {
+  return createHash('sha256').update(password).digest('hex')
+}
+```
+
+### **Session Management**
+- **Storage**: localStorage (frontend only)
+- **Validation**: API routes vérifient hash
+- **Redirect**: Auto-redirect si non connecté
+
+## 🎯 Features Actuelles vs Futures
+
+### **✅ Implémenté**
+- Authentification utilisateur
+- Dashboard responsive  
+- Sidebar navigation
+- Score temps réel Arduino→Flask
+- Design system complet
+
+### **🚧 En Développement**
+- Profils utilisateur complets
+- Système de matchs
+- Rankings/Classements
+- Réservation tables
+- Système de coins/paris
+- Clans/équipes
+
+## 📱 Responsive Design
+
+### **Breakpoints**
+- `lg:`: Desktop (1024px+) - Sidebar fixe
+- `max-lg:`: Mobile/Tablet - Sidebar overlay
+
+### **Layout Strategy**
+- **CSS Grid**: Layout principal
+- **Flexbox**: Composants internes
+- **Tailwind**: Utility-first approach
+
+Cette architecture permet une évolutivité maximale vers les fonctionnalités futures tout en maintenant une base solide IoT + Web.
+# BabyLink - Architecture Technique Complète
+
+## 🏗️ Architecture du Système
+
+### **Dual Architecture**: Frontend NextJS + Backend Flask IoT
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   FRONTEND      │    │   BACKEND       │    │   HARDWARE      │
+│   Next.js 15    │◄──►│   Flask 5000    │◄──►│   Arduino       │
+│   Port 3000     │    │   Socket.io     │    │   Sensors       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🗃️ Base de Données - SQLite avec Prisma
+
+### **Schema Principal** (`frontend/prisma/schema.prisma`)
+```sql
+-- Table User (seule table actuelle)
+CREATE TABLE "User" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "email" TEXT UNIQUE NOT NULL,
+    "name" TEXT NOT NULL, 
+    "password" TEXT NOT NULL,  -- SHA256 hash
+    "score" INTEGER DEFAULT 0,
+    "createdAt" DATETIME DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+```
+
+### **Configuration Prisma**
+- **Provider**: SQLite (`frontend/prisma/dev.db`)
+- **Client Output**: `frontend/src/generated/prisma`
+- **Seed**: `frontend/prisma/seed.ts` (4 utilisateurs test)
+- **Migrations**: `frontend/prisma/migrations/`
+
+### **Données de Test** (Mot de passe: `test123`)
+- messi@epsi.fr (2450 pts)
+- ronaldo@epsi.fr (1890 pts) 
+- neymar@epsi.fr (1650 pts)
+- mbappe@epsi.fr (1200 pts)
+
+## 🎯 Frontend - Next.js 15 Architecture
+
+### **Structure de Fichiers**
+```
+frontend/src/
+├── app/                 # App Router Next.js 15
+│   ├── api/auth/       # API Routes (login/register)
+│   ├── login/          # Page de connexion
+│   ├── page.tsx        # Dashboard principal
+│   ├── layout.tsx      # Layout racine + fonts
+│   └── globals.css     # Styles globaux + variables CSS
+├── components/
+│   ├── ui/            # Composants Shadcn/ui base
+│   ├── layout/        # Sidebar, AuthenticatedLayout
+│   └── babyfoot_component/ # Composants métier
+├── contexts/          # AuthContext (localStorage)
+└── lib/              # Utilities (Prisma, utils)
+```
+
+### **Stack Technique Frontend**
+- **Framework**: Next.js 15.3.5 + App Router
+- **Language**: TypeScript strict
+- **Styling**: Tailwind CSS 4 + CSS Modules
+- **Fonts**: IBM Plex Sans (Google) + NuberNext/Monument (local)
+- **State**: React Context + localStorage
+- **UI Components**: Radix UI + Lucide React icons
+- **Animation**: Framer Motion
+- **Database ORM**: Prisma Client
+
+### **Authentification**
+```typescript
+// Structure User interface
+interface User {
+  id: number
+  email: string
+  name: string
+  score: number
+  // Futurs champs pour profil complet:
+  firstName?: string
+  lastName?: string
+  avatar?: string
+  jerseyNumber?: number
+  skillLevel?: string
+  position?: string
+  championship?: string
+  xp?: number
+  coins?: number
+  elo?: number
+}
+```
+
+### **API Routes Next.js**
+- **POST `/api/auth/login`**: Authentification SHA256
+- **POST `/api/auth/register`**: Inscription utilisateur
+- Futur: `/api/games`, `/api/rankings`, `/api/players`
+
+## ⚙️ Backend IoT - Flask + Arduino
+
+### **Flask Server** (`app/app.py`)
+- **Port**: 5000
+- **WebSocket**: Socket.io pour temps réel
+- **Serial**: Communication Arduino via `/dev/ttyACM0`
+- **Routes**: 
+  - `GET /`: Interface HTML score
+  - `POST /reset`: Reset scores
+  - `WebSocket 'connect'`: Sync score initial
+
+### **Score Management**
+```python
+score = {'GAUCHE': 0, 'DROITE': 0}  # État global
+
+def emit_score():
+    socketio.emit('score_update', {
+        'left': score['GAUCHE'],
+        'right': score['DROITE']
+    })
+```
+
+### **Arduino Code** (`arduino/babylink/babylink.ino`)
+- **Pins**: 2 (gauche), 3 (droite), 5 (buzzer)
+- **Logic**: INPUT_PULLUP, détection LOW→HIGH
+- **Serial**: 9600 baud, envoi "GAUCHE"/"DROITE"
+- **Sound**: Buzzer 1000Hz, 150ms
+
+### **Hardware Setup**
+- Capteurs IR Adafruit
+- Arduino Uno/Nano
+- Buzzer actif
+- Raspberry Pi (serveur Flask)
+
+## 🎨 Design System
+
+### **Palette de Couleurs**
+```css
+:root {
+  --primary-dark: #0C0E14;    /* Background principal */
+  --accent-red: #EA1846;      /* CTA, highlights */
+  --text-white: #FDFFFF;      /* Texte principal */
+  --light-bg: #F7F7F7;        /* Backgrounds secondaires */
+}
+```
+
+### **Fonts CSS Variables**
+```css
+--font-ibm-plex-sans: 'IBM Plex Sans', sans-serif;
+--font-nubernext: 'NuberNext', sans-serif;  
+--font-monument: 'Monument Extended', sans-serif;
+```
+
+### **Layout Responsive**
+- **Desktop**: Sidebar 280px fixe + main content
+- **Mobile**: Sidebar overlay + burger menu
+- **CSS Grid**: `grid-rows-[auto_1fr_auto]` pour footer fixe
+
+## 🚀 Scripts & Commandes
+
+### **Frontend (Node.js)**
+```bash
+cd frontend/
+npm run dev          # Dev server (port 3000)
+npm run build        # Production build
+npm run lint         # ESLint
+npx prisma db push   # Sync schema → database
+npx prisma db seed   # Populate test data
+npx prisma generate  # Generate client types
+```
+
+### **Backend IoT (Python)**
+```bash
+cd app/
+python3 app.py       # Flask server (port 5000)
+# Prérequis: Arduino connecté sur /dev/ttyACM0
+```
+
+## 🔧 Configuration Files
+
+### **Dependencies Management**
+- **Frontend**: `frontend/package.json` (48 dépendances)
+- **Backend**: `requirements.txt` (4 dépendances Python)
+
+### **TypeScript Config**
+- `frontend/tsconfig.json`: Strict mode, path mapping
+- **ESLint**: `frontend/eslint.config.mjs` + `.eslintignore`
+
+### **Tailwind Setup**
+- `frontend/tailwind.config.ts`: CSS variables, fonts
+- `frontend/postcss.config.mjs`: PostCSS 4
+
+## 📡 Real-time Communication
+
+### **Socket.io Flow**
+```
+Arduino → Serial → Flask → Socket.io → Frontend
+  ↓          ↓        ↓         ↓         ↓
+"GAUCHE"  →  +1   →  emit   →  event  →  UI update
+```
+
+### **Event Types**
+- `score_update`: Envoi score temps réel
+- `connect`: Client connection (sync initial)
+
+## 🔒 Security & Auth
+
+### **Password Hashing**
+```typescript
+// Même logique partout (seed, login, register)
+function hashPassword(password: string): string {
+  return createHash('sha256').update(password).digest('hex')
+}
+```
+
+### **Session Management**
+- **Storage**: localStorage (frontend only)
+- **Validation**: API routes vérifient hash
+- **Redirect**: Auto-redirect si non connecté
+
+## 🎯 Features Actuelles vs Futures
+
+### **✅ Implémenté**
+- Authentification utilisateur
+- Dashboard responsive  
+- Sidebar navigation
+- Score temps réel Arduino→Flask
+- Design system complet
+
+### **🚧 En Développement**
+- Profils utilisateur complets
+- Système de matchs
+- Rankings/Classements
+- Réservation tables
+- Système de coins/paris
+- Clans/équipes
+
+## 📱 Responsive Design
+
+### **Breakpoints**
+- `lg:`: Desktop (1024px+) - Sidebar fixe
+- `max-lg:`: Mobile/Tablet - Sidebar overlay
+
+### **Layout Strategy**
+- **CSS Grid**: Layout principal
+- **Flexbox**: Composants internes
+- **Tailwind**: Utility-first approach
+
+Cette architecture permet une évolutivité maximale vers les fonctionnalités futures tout en maintenant une base solide IoT + Web.

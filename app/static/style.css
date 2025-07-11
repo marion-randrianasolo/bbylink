@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+:root {
+  --bg: #0a1b2a;
+  --text: #fff;
+  --orange: #ff8c00;
+  --purple: #9b59b6;
+  --primary: #e84335;
+  --secondary: #fdcb6e;
+}
+
+/* Overlay de démarrage */
+.overlay[hidden] { display: none !important; }
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.overlay-content {
+  background: #112a3a;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  width: 90%; max-width: 320px;
+}
+.overlay-header {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.8rem; margin-bottom: 1rem;
+}
+#overlay-logo {
+  height: 80px; width: auto;
+}
+#overlay-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  color: #fff;
+}
+.overlay-content h2 {
+  color: var(--secondary);
+  margin-bottom: 1rem;
+  font-size: 1rem;  /* texte plus petit */
+}
+.overlay-content input {
+  width: 100%; padding: 0.6rem; margin: 0.5rem 0;
+  font-size: 1rem; border-radius: 0.3rem;
+  border: 1px solid var(--secondary);
+}
+.overlay-content button {
+  margin-top: 1rem; padding: 0.6rem 1.2rem;
+  font-size: 1rem; background: var(--primary);
+  color: #fff; border: none; border-radius: 0.3rem;
+  cursor: pointer; transition: background 0.2s;
+}
+.overlay-content button:hover {
+  background: var(--secondary);
+}
+
+/* Structure générale */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Helvetica Neue', sans-serif;
+}
+.app-container {
+  display: flex; flex-direction: column;
+  height: 100%; align-items: center;
+}
+
+/* Scoreboard */
+.scoreboard {
+  position: relative;
+  display: flex; justify-content: space-around;
+  align-items: center; width: 100%; flex: 1;
+}
+.score-area {
+  position: relative; width: 40%; display: flex;
+  justify-content: center;
+}
+.score-area span {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 20vw; /* très gros */
+  line-height: 1;
+}
+.separator {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14vw; line-height: 1;
+}
+
+/* Barres fixes en haut */
+.score-bar {
+  position: fixed; top: 0; height: 4vh; width: 50vw;
+  border-radius: 2px; opacity: 0.6;
+  transition: transform 0.2s, opacity 0.2s;
+  z-index: 10;
+}
+.score-bar.left  { left: 0;      background: var(--orange); }
+.score-bar.right { left: 50vw;   background: var(--purple); }
+.score-bar.active {
+  transform: scaleY(1.5);
+  opacity: 1;
+}
+
+/* Message victoire */
+.message {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -60%);
+  width: 100%; text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 6vw;
+  color: var(--secondary);
+  z-index: 10;
+}
+
+/* Boutons de contrôle */
+.controls {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 10px);
+  width: 100%;
+  display: flex; justify-content: center; gap: 1rem;
+  padding: 0.5rem 0; z-index: 10;
+}
+button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button:hover {
+  background: var(--secondary);
+}

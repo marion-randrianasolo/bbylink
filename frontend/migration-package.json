@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "created": "2025-07-09T19:09:48.606Z",
+  "instructions": [
+    "=== SETUP INSTRUCTIONS FOR NEW PC ===",
+    "",
+    "1. Copy this entire project to your new machine",
+    "2. Create .env file with content below",
+    "3. Run: npm install",
+    "4. Run: npx prisma generate",
+    "5. Run: npx prisma db push",
+    "6. Run: npx prisma db seed (creates test users)",
+    "",
+    "OR use shortcut: npm run setup-db",
+    "",
+    "=== RESTORE DATA (Optional) ===",
+    "If database-backup.sql exists:",
+    "  sqlite3 prisma/dev.db < database-backup.sql",
+    "",
+    "If database-backup.db exists:",
+    "  Copy it to prisma/dev.db"
+  ],
+  "schema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  name      String\n  password  String   // SHA256 hash\n  score     Int      @default(0)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  \n  // Future fields for complete profile\n  firstName    String?\n  lastName     String?\n  avatar       String?\n  jerseyNumber Int?\n  skillLevel   String?\n  position     String?\n  championship String?\n  xp           Int?\n  coins        Int?\n  elo          Int?\n}\n",
+  "seed": "import { PrismaClient } from '../src/generated/prisma'\r\nimport { createHash } from 'crypto'\r\n\r\nconst prisma = new PrismaClient()\r\n\r\n/**\r\n * Simple password hasher using SHA256 - keeps things consistent with the auth routes\r\n * @param {string} password - plain text password\r\n * @returns {string} - hashed password\r\n */\r\nfunction hashPassword(password: string): string {\r\n  return createHash('sha256').update(password).digest('hex')\r\n}\r\n\r\n/**\r\n * Main seeding function - sets up some famous football players for testing\r\n */\r\nasync function main() {\r\n  // Clear existing data first\r\n  await prisma.user.deleteMany()\r\n\r\n  const users = [\r\n    {\r\n      email: 'messi@epsi.fr',\r\n      name: 'Lionel Messi',\r\n      password: 'test123',\r\n      score: 2450,\r\n      firstName: 'Lionel',\r\n      lastName: 'Messi',\r\n      skillLevel: 'EXPERT',\r\n      position: 'Attaquant',\r\n      championship: 'EPSI Montpellier',\r\n      xp: 2450,\r\n      coins: 1200,\r\n      elo: 2100,\r\n      jerseyNumber: 10,\r\n    },\r\n    {\r\n      email: 'ronaldo@epsi.fr',\r\n      name: 'Cristiano Ronaldo',\r\n      password: 'test123',\r\n      score: 1890,\r\n      firstName: 'Cristiano',\r\n      lastName: 'Ronaldo',\r\n      skillLevel: 'EXPERT',\r\n      position: 'Attaquant',\r\n      championship: 'EPSI Montpellier',\r\n      xp: 1890,\r\n      coins: 950,\r\n      elo: 1980,\r\n      jerseyNumber: 7,\r\n    },\r\n    {\r\n      email: 'neymar@epsi.fr',\r\n      name: 'Neymar Jr',\r\n      password: 'test123',\r\n      score: 1650,\r\n      firstName: 'Neymar',\r\n      lastName: 'Da Silva Santos Jr',\r\n      skillLevel: 'AVANCE',\r\n      position: 'Milieu',\r\n      championship: 'EPSI Montpellier',\r\n      xp: 1650,\r\n      coins: 800,\r\n      elo: 1750,\r\n      jerseyNumber: 11,\r\n    },\r\n    {\r\n      email: 'mbappe@epsi.fr',\r\n      name: 'Kylian Mbappé',\r\n      password: 'test123',\r\n      score: 1200,\r\n      firstName: 'Kylian',\r\n      lastName: 'Mbappé',\r\n      skillLevel: 'INTERMEDIAIRE',\r\n      position: 'Attaquant',\r\n      championship: 'EPSI Montpellier',\r\n      xp: 1200,\r\n      coins: 600,\r\n      elo: 1520,\r\n      jerseyNumber: 9,\r\n    },\r\n  ]\r\n\r\n  for (const userData of users) {\r\n    const hashedPassword = hashPassword(userData.password)\r\n    \r\n    const user = await prisma.user.create({\r\n      data: {\r\n        email: userData.email,\r\n        name: userData.name,\r\n        password: hashedPassword,\r\n        score: userData.score,\r\n        firstName: userData.firstName,\r\n        lastName: userData.lastName,\r\n        skillLevel: userData.skillLevel,\r\n        position: userData.position,\r\n        championship: userData.championship,\r\n        xp: userData.xp,\r\n        coins: userData.coins,\r\n        elo: userData.elo,\r\n        jerseyNumber: userData.jerseyNumber,\r\n      },\r\n    })\r\n\r\n    console.log(`✅ Utilisateur créé: ${user.name} (${user.email}) - Score: ${user.score}`)\r\n  }\r\n\r\n  console.log('\\n🎉 Base de données initialisée avec succès!')\r\n  console.log('🔑 Mot de passe pour tous les utilisateurs de test: test123')\r\n  console.log('📊 4 utilisateurs créés avec des profils complets')\r\n}\r\n\r\nmain()\r\n  .catch((e) => {\r\n    console.error('❌ Erreur lors du seeding:', e)\r\n    process.exit(1)\r\n  })\r\n  .finally(async () => {\r\n    await prisma.$disconnect()\r\n  }) ",
+  "packageJson": {
+    "prisma": {
+      "seed": "tsx prisma/seed.ts"
+    },
+    "scripts": {
+      "setup-db": "npx prisma generate && npx prisma db push && npx prisma db seed"
+    }
+  },
+  "env_example": "# Database URL for SQLite\nDATABASE_URL=\"file:./prisma/dev.db\"\n\n# Next.js\nNEXTAUTH_URL=\"http://localhost:3000\"\nNEXTAUTH_SECRET=\"your-secret-key-here\"",
+  "troubleshooting": [
+    "Common issues and solutions:",
+    "",
+    "1. 'prisma generate' fails:",
+    "   - Make sure Node.js 18+ is installed",
+    "   - Delete node_modules and run npm install",
+    "",
+    "2. 'prisma db push' fails:",
+    "   - Check if .env file exists with correct DATABASE_URL",
+    "   - Make sure prisma/ directory exists",
+    "",
+    "3. Import errors in TypeScript:",
+    "   - Run: npx prisma generate",
+    "   - Restart VS Code/TypeScript server",
+    "",
+    "4. Seed fails:",
+    "   - Make sure database exists (run db push first)",
+    "   - Check if tsx is installed: npm install tsx"
+  ]
+}

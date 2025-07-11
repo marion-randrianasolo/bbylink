@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BabyLink Score</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Overlay de démarrage -->
+    <div id="name-overlay" class="overlay">
+      <div class="overlay-content">
+        <div class="overlay-header">
+          <img src="/static/logo.png" id="overlay-logo" alt="BabyLink">
+          <span id="overlay-title">BabyLink</span>
+        </div>
+        <h2>Entrez les noms des joueurs</h2>
+        <input id="left-name-input"  type="text" placeholder="Joueur gauche" />
+        <input id="right-name-input" type="text" placeholder="Joueur droite" />
+        <button id="start-button">Démarrer la partie</button>
+      </div>
+    </div>
+
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+      <div class="score-area">
+        <div class="score-bar left"></div>
+        <span id="left-score" data-prev="0">0</span>
+      </div>
+      <div class="separator">–</div>
+      <div class="score-area">
+        <div class="score-bar right"></div>
+        <span id="right-score" data-prev="0">0</span>
+      </div>
+    </div>
+
+    <!-- Message de victoire -->
+    <div id="message" class="message" hidden></div>
+
+    <!-- Boutons de contrôle -->
+    <div class="controls">
+      <button id="reset-button">Remettre à zéro</button>
+      <button id="newgame-button" hidden>Nouvelle partie</button>
+    </div>
+
+  </div>
+
+  <audio id="win-sound" src="/static/win.mp3" preload="auto"></audio>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <script>
+    let leftName = '', rightName = '';
+    const overlay    = document.getElementById('name-overlay');
+    const leftInput  = document.getElementById('left-name-input');
+    const rightInput = document.getElementById('right-name-input');
+    const startBtn   = document.getElementById('start-button');
+    const leftEl     = document.getElementById('left-score');
+    const rightEl    = document.getElementById('right-score');
+    const resetBtn   = document.getElementById('reset-button');
+    const newGameBtn = document.getElementById('newgame-button');
+    const messageEl  = document.getElementById('message');
+    const winSound   = document.getElementById('win-sound');
+    const WIN_SCORE  = 10;
+    let gameOver     = false;
+
+    // Démarrage
+    startBtn.addEventListener('click', () => {
+      if (!leftInput.value.trim() || !rightInput.value.trim()) return;
+      leftName  = leftInput.value.trim();
+      rightName = rightInput.value.trim();
+      overlay.hidden = true;
+      fetch('/reset', { method: 'POST' });
+    });
+
+    // Socket.IO : réception des scores
+    const socket = io();
+    socket.on('score_update', data => {
+      if (gameOver) return;
+      const prevL = +leftEl.dataset.prev, prevR = +rightEl.dataset.prev;
+      leftEl.textContent  = data.left;
+      rightEl.textContent = data.right;
+      if (data.left  > prevL) pulse('left');
+      if (data.right > prevR) pulse('right');
+      leftEl.dataset.prev  = data.left;
+      rightEl.dataset.prev = data.right;
+      if (data.left >= WIN_SCORE || data.right >= WIN_SCORE) {
+        gameOver = true;
+        celebrate(data.left >= WIN_SCORE ? leftName : rightName);
+      }
+    });
+
+    // Pulse des barres
+    function pulse(side) {
+      const bar = document.querySelector('.score-bar.' + side);
+      bar.classList.add('active');
+      setTimeout(() => bar.classList.remove('active'), 300);
+    }
+
+    // Reset
+    resetBtn.addEventListener('click', () => {
+      if (!gameOver) fetch('/reset', { method: 'POST' });
+    });
+
+    // Nouvelle partie
+    newGameBtn.addEventListener('click', () => {
+      gameOver = false;
+      overlay.hidden = false;
+      // Réaffiche scoreboard & barres
+      document.querySelector('.scoreboard').style.display = 'flex';
+      document.querySelectorAll('.score-bar')
+        .forEach(el => el.style.display = 'block');
+      leftEl.textContent = rightEl.textContent = '0';
+      leftEl.dataset.prev = rightEl.dataset.prev = '0';
+      resetBtn.hidden   = false;
+      newGameBtn.hidden = true;
+      messageEl.hidden  = true;
+      fetch('/reset', { method: 'POST' });
+    });
+
+    // Célébration
+    function celebrate(winner) {
+      // Masque le plateau et les barres
+      document.querySelector('.scoreboard').style.display = 'none';
+      document.querySelectorAll('.score-bar')
+        .forEach(el => el.style.display = 'none');
+      // Son + confettis
+      winSound.play();
+      confetti({ particleCount: 200, spread: 70, origin: { y: 0.5 } });
+      // Affiche le message
+      messageEl.textContent = `Bravo ${winner} ⚽🎉`;
+      messageEl.hidden      = false;
+      resetBtn.hidden       = true;
+      newGameBtn.hidden     = false;
+    }
+  </script>
+</body>
+</html>
