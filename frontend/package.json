@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "echo \"DATABASE_URL=$DATABASE_URL\"",
     "dev": "next dev --turbopack -H 0.0.0.0 -p 3000",
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
