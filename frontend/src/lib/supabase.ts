@@ -1,6 +1,14 @@
+// frontend/src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// L’URL publique de ton projet Supabase (Data API)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
-export const supabase = createClient(URL, KEY, { auth: { persistSession: false } })
+// La clé « service_role » (secret) pour les appels côté serveur
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+export const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY,
+  { auth: { persistSession: false } }
+)
