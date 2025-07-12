@@ -22,6 +22,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+package-lock.json
 
 # Local env files
 .env
@@ -37,7 +38,7 @@ next-env.d.ts
 # Prisma
 /prisma/dev.db
 /prisma/dev.db-journal
-/prisma/migrations/
+#/prisma/migrations/
 /prisma/prisma/
 
 # Generated files
