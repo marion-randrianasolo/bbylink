@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+// frontend/src/lib/prisma.ts
+import { supabase } from './supabase'
 
-const prisma = new PrismaClient()
-
-export default prisma
+export default supabase
