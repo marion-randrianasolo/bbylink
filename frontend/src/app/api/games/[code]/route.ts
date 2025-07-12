@@ -59,9 +59,6 @@ export async function GET(
                 position: true,
               }
             }
-          },
-          orderBy: {
-            joinedAt: 'asc'
           }
         }
       }
@@ -132,6 +129,9 @@ export async function POST(
       
       case 'leave':
         return handleLeaveGame(game, userId)
+      
+      case 'finish':
+        return handleFinishGame(game, userId, request)
       
       default:
         return NextResponse.json(
@@ -245,9 +245,6 @@ async function handleJoinGame(game: any, userId: number, guestName?: string, req
               position: true,
             }
           }
-        },
-        orderBy: {
-          joinedAt: 'asc'
         }
       }
     }
@@ -319,9 +316,6 @@ async function handleStartGame(game: any, userId: number) {
               position: true,
             }
           }
-        },
-        orderBy: {
-          joinedAt: 'asc'
         }
       }
     }
@@ -415,13 +409,45 @@ async function handleLeaveGame(game: any, userId: number) {
               position: true,
             }
           }
-        },
-        orderBy: {
-          joinedAt: 'asc'
         }
       }
     }
   })
 
   return NextResponse.json({ game: updatedGame })
+} 
+
+/**
+ * Handle finishing a game and updating rewards
+ */
+async function handleFinishGame(game: any, userId: number, request: NextRequest) {
+  // Récupère les infos du gagnant depuis le body
+  const { winnerTeam } = await request.json();
+
+  // Met à jour le statut de la partie
+  await prisma.game.update({
+    where: { id: game.id },
+    data: { status: 'finished', finishedAt: new Date() }
+  });
+
+  // Récompenses (à adapter selon ta logique)
+  const eloDelta = 50;
+  const coinsDelta = 50;
+  const xpDelta = 100;
+
+  // Met à jour chaque joueur
+  for (const p of game.players) {
+    if (!p.userId) continue; // skip guests
+    const isWinner = p.team === winnerTeam;
+    await prisma.user.update({
+      where: { id: p.userId },
+      data: {
+        elo: { increment: isWinner ? eloDelta : -eloDelta },
+        coins: { increment: isWinner ? coinsDelta : 0 },
+        xp: { increment: isWinner ? xpDelta : 0 }
+      }
+    });
+  }
+
+  return NextResponse.json({ success: true });
 } 

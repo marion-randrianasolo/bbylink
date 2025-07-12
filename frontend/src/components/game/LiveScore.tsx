@@ -13,6 +13,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import socketService from '@/lib/socket'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface GameData {
   id: number
@@ -69,6 +70,7 @@ interface ScoreData {
  * Composant Live Score pour afficher le score en temps réel
  */
 export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScoreProps) {
+  const { user } = useAuth();
   const [score, setScore] = useState<ScoreData>({ left: 0, right: 0 })
   const [gameOver, setGameOver] = useState(false)
   const [winner, setWinner] = useState<string>('')
@@ -158,9 +160,9 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
   }
 
   /**
-   * Gestion de la fin de partie avec célébrations
+   * Gestion de la fin de partie avec célébrations + appel API
    */
-  const handleGameEnd = (winnerName: string) => {
+  const handleGameEnd = async (winnerName: string) => {
     setGameOver(true)
     setWinner(winnerName)
     
@@ -176,6 +178,24 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
         spread: 70,
         origin: { y: 0.5 }
       })
+    }
+    
+    // Appel API pour finir la partie et récompenser
+    try {
+      const winnerTeam = score.left >= WIN_SCORE ? 'RED' : 'BLUE';
+      if (user) {
+        await fetch(`/api/games/${gameData.code}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'finish',
+            userId: user.id,
+            winnerTeam
+          })
+        });
+      }
+    } catch (err) {
+      console.error('Erreur API fin de partie:', err);
     }
   }
 
