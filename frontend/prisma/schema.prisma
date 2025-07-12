@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")   // pooler
+  url        = env("DATABASE_URL")   // pooler 
   directUrl  = env("DIRECT_URL")     // direct pour migrate
 }
 
