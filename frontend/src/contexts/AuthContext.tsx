@@ -72,6 +72,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedUser = localStorage.getItem('user')
     if (savedUser) {
       setUser(JSON.parse(savedUser))
+      // Ajout : fetch profil à jour dès le chargement initial
+      fetch('/api/auth/refresh-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: JSON.parse(savedUser).id }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            setUser(data.user)
+            localStorage.setItem('user', JSON.stringify(data.user))
+          }
+        })
     }
     setIsLoading(false)
   }, [])

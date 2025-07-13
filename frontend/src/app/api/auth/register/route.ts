@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
         position,
         score: 0,
         // Valeurs par défaut BabyLink
-        coins: 0,     // Nouveau joueur commence avec 0 coins
-        xp: 1250,     // Nouveau joueur commence avec 1250 XP
-        elo: 1000,    // Nouveau joueur commence avec 1000 ELO
+        coins: 100,     // Nouveau joueur commence avec 0 coins
+        xp: 0,     // Nouveau joueur commence avec 1250 XP
+        elo: 100,    // Nouveau joueur commence avec 1000 ELO
       },
       select: {
         id: true,
