@@ -441,43 +441,31 @@ async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: st
   console.log(`🏁 Finishing game ${game.code} - Winner team: ${winnerTeam}`);
 
   for (const p of game.players) {
-    // Compatibilité : userId direct ou via jointure user
     const playerUserId = p.userId || p.user?.id;
     if (!playerUserId) {
       console.log(`⏭️ Skipping guest player: ${p.guestName || 'Unknown'}`);
-      continue; // skip guests or invalid
+      continue;
     }
-    
     const isWinner = p.team === winnerTeam;
-    console.log(`👤 Processing player ${playerUserId} (${p.user?.name || 'Unknown'}) - Team: ${p.team}, Winner: ${isWinner}`);
-
-    // Récupérer l'elo actuel pour éviter de descendre sous 0
-    const user = await prisma.user.findUnique({ 
-      where: { id: playerUserId }, 
-      select: { elo: true, coins: true, xp: true } 
-    });
-    
-    let newElo = user?.elo ?? 1000;
-    let newCoins = user?.coins ?? 0;
-    let newXp = user?.xp ?? 1250;
-    
+    const user = await prisma.user.findUnique({ where: { id: playerUserId }, select: { elo: true } });
+    const currentElo = user?.elo ?? 1000;
+    let eloUpdate;
     if (isWinner) {
-      newElo += eloDelta;
-      newCoins += coinsDelta;
-      newXp += xpWin;
-      console.log(`✅ Winner ${playerUserId}: +${eloDelta} ELO, +${coinsDelta} COINS, +${xpWin} XP`);
+      eloUpdate = { increment: eloDelta };
     } else {
-      newElo = Math.max(0, newElo - eloDelta);
-      newXp += xpLose;
-      console.log(`❌ Loser ${playerUserId}: -${eloDelta} ELO, +0 COINS, +${xpLose} XP`);
+      // On ne descend pas sous 0
+      eloUpdate = { decrement: Math.min(eloDelta, currentElo) };
     }
-
+    console.log(`👤 Player ${playerUserId} | team: ${p.team} | winnerTeam: ${winnerTeam} | isWinner: ${isWinner}`);
+    console.log(`   ELO: ${currentElo} -> ${isWinner ? '+' + eloDelta : '-' + Math.min(eloDelta, currentElo)}`);
+    console.log(`   COINS: ${isWinner ? '+' + coinsDelta : '+0'}`);
+    console.log(`   XP: ${isWinner ? '+' + xpWin : '+' + xpLose}`);
     await prisma.user.update({
       where: { id: playerUserId },
       data: {
-        elo: newElo,
-        coins: newCoins,
-        xp: newXp
+        elo: eloUpdate,
+        coins: { increment: isWinner ? coinsDelta : 0 },
+        xp: { increment: isWinner ? xpWin : xpLose }
       }
     });
   }
