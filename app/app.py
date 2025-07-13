@@ -571,7 +571,6 @@ def reset_via_http():
     emit_score()
     return '', 204  # No Content
 
-# Nouvelle route pour resetter le score lors d'une nouvelle partie
 @app.route('/api/games/<string:game_code>/reset-score', methods=['POST'])
 def reset_game_score(game_code):
     """Reset le score Arduino pour une nouvelle partie"""
@@ -579,8 +578,58 @@ def reset_game_score(game_code):
         data = request.get_json() or {}
         user_id = data.get('user_id')
         
+        # Vérifier si la partie existe dans active_games
         if game_code not in active_games:
-            return jsonify({'error': 'Partie introuvable'}), 404
+            print(f"🔄 Partie {game_code} absente de active_games, tentative de récupération depuis Next.js...")
+            
+            # Tenter de récupérer la partie depuis Next.js
+            try:
+                resp = requests.get(f"{NEXTJS_API_BASE}/games/{game_code}")
+                if resp.ok:
+                    game = resp.json().get('game')
+                    if game:
+                        # Créer une entrée dans active_games avec les données de Next.js
+                        active_games[game_code] = {
+                            'code': game['code'],
+                            'status': game['status'],
+                            'host_id': game['host']['id'],
+                            'host_name': game['host']['name'],
+                            'table_id': game['table']['id'],
+                            'table_name': game['table']['name'],
+                            'game_mode': game['gameMode'],
+                            'win_condition': game['winCondition'],
+                            'win_value': game['winValue'],
+                            'max_goals': game.get('maxGoals'),
+                            'currentScoreLeft': 0,
+                            'currentScoreRight': 0,
+                            'created_at': time.time(),
+                            'players': [],
+                            'max_players': 2 if game['gameMode'] == '1v1' else 4
+                        }
+                        
+                        # Ajouter l'hôte comme joueur
+                        host_player = {
+                            'user_id': game['host']['id'],
+                            'user_name': game['host']['name'],
+                            'user_avatar': game['host'].get('avatar', ''),
+                            'user_first_name': game['host'].get('firstName', ''),
+                            'user_last_name': game['host'].get('lastName', ''),
+                            'user_elo': game['host'].get('elo', 0),
+                            'team': 'RED',
+                            'position': 'PLAYER',
+                            'is_guest': False,
+                            'is_host': True
+                        }
+                        active_games[game_code]['players'].append(host_player)
+                        
+                        print(f"✅ Partie {game_code} récupérée depuis Next.js et ajoutée à active_games")
+                    else:
+                        return jsonify({'error': 'Partie introuvable dans Next.js'}), 404
+                else:
+                    return jsonify({'error': 'Partie introuvable dans Next.js'}), 404
+            except Exception as e:
+                print(f"❌ Erreur lors de la récupération depuis Next.js: {e}")
+                return jsonify({'error': 'Erreur de communication avec Next.js'}), 500
         
         game_data = active_games[game_code]
         
