@@ -426,28 +426,12 @@ async function handleLeaveGame(game: any, userId: number) {
  * Handle finishing a game and updating rewards
  */
 async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: string) {
-  // Vérifier si la partie est déjà finie
+  // Protection : empêcher la double attribution
   if (game.status === 'finished') {
     return NextResponse.json({ error: 'La partie est déjà terminée.' }, { status: 409 });
   }
 
-  // Vérification du score pour valider le gagnant
-  // On suppose que game.scoreLeft et game.scoreRight existent (sinon, à adapter)
-  const WIN_SCORE = game.winValue || 10;
-  const leftScore = game.scoreLeft ?? 0;
-  const rightScore = game.scoreRight ?? 0;
-  let expectedWinner: 'RED' | 'BLUE';
-  if (leftScore >= WIN_SCORE && leftScore > rightScore) {
-    expectedWinner = 'RED';
-  } else if (rightScore >= WIN_SCORE && rightScore > leftScore) {
-    expectedWinner = 'BLUE';
-  } else {
-    // Si égalité ou score non atteint, refuse la fin de partie
-    return NextResponse.json({ error: 'Le score ne permet pas de déterminer un gagnant.' }, { status: 400 });
-  }
-  if (winnerTeam !== expectedWinner) {
-    return NextResponse.json({ error: 'winnerTeam ne correspond pas au score réel.' }, { status: 400 });
-  }
+  // On ne vérifie PAS le score ici, car il n'est pas synchronisé avec Flask/Socket.IO
 
   // Met à jour le statut de la partie
   await prisma.game.update({
@@ -464,24 +448,22 @@ async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: st
   for (const p of game.players) {
     const playerUserId = p.userId || p.user?.id;
     if (!playerUserId) continue;
-  
+
     const isWinner = p.team === winnerTeam;
-  
-    const user = await prisma.user.findUnique({
-      where: { id: playerUserId },
-      select: { elo: true, coins: true, xp: true }
+    const user = await prisma.user.findUnique({ 
+      where: { id: playerUserId }, 
+      select: { elo: true, coins: true, xp: true } 
     });
-  
     const currentElo = user?.elo ?? 1000;
     const currentCoins = user?.coins ?? 0;
     const currentXp = user?.xp ?? 1250;
-  
-    const newXp = currentXp + (isWinner ? 100 : 20);
-    const newCoins = isWinner ? currentCoins + 50 : currentCoins; // pas de gain en cas de défaite
+
+    const newXp = currentXp + (isWinner ? xpWin : xpLose);
+    const newCoins = isWinner ? currentCoins + coinsDelta : currentCoins;
     const newElo = isWinner
-      ? currentElo + 50
-      : Math.max(0, currentElo - 50); // jamais en-dessous de 0
-  
+      ? currentElo + eloDelta
+      : Math.max(0, currentElo - eloDelta);
+
     await prisma.user.update({
       where: { id: playerUserId },
       data: {
