@@ -107,16 +107,12 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
     setError(null)
     
     try {
-      // Chercher la partie via Flask avec auto-détection hostname
-      // On utilise directement l’URL du back
-      const serverUrl = `${FLASK_API}/api/games/${gameCode}`
-      console.log(`🔍 Fetching game on: ${serverUrl}`)
-      const response = await fetch(serverUrl)
+      // Chercher la partie via Next.js (et non Flask)
+      const response = await fetch(`/api/games/${gameCode}`)
       const data = await response.json()
 
       if (response.ok) {
         setGameData(data.game)
-        
         // Vérifier si l'utilisateur peut rejoindre
         if (data.game.status !== 'waiting') {
           setError('Cette partie a déjà commencé ou est terminée')
@@ -134,7 +130,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
       }
     } catch (error) {
       console.error('Erreur lors de la recherche:', error)
-      setError('Erreur de connexion au serveur Flask')
+      setError('Erreur de connexion au serveur')
       setGameData(null)
     } finally {
       setIsLoading(false)
