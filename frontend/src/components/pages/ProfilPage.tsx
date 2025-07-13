@@ -98,7 +98,7 @@ export default function ProfilPage() {
                   }
                 </h2>
                 <p className="text-[#EA1846] font-nubernext-extended-bold mb-4">
-                  XP: {user.xp || 1250}
+                  XP: {user.xp ?? 0}
                 </p>
                 <button className="w-full bg-[#EA1846] text-white py-3 rounded-lg font-nubernext-extended-bold hover:bg-[#d41539] transition-colors">
                   Modifier Avatar
@@ -117,25 +117,25 @@ export default function ProfilPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-nubernext-extended-bold text-[#EA1846] mb-1">
-                    {user.score || 0}
+                    {user.score ?? 0}
                   </div>
                   <div className="text-sm text-[#AAAAAA]">Score</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-nubernext-extended-bold text-[#EA1846] mb-1">
-                    {user.xp || 1250}
+                    {user.xp ?? 0}
                   </div>
                   <div className="text-sm text-[#AAAAAA]">Expérience</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-nubernext-extended-bold text-[#EA1846] mb-1">
-                    {user.coins || 0}
+                    {user.coins ?? 0}
                   </div>
                   <div className="text-sm text-[#AAAAAA]">Coins</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-nubernext-extended-bold text-[#EA1846] mb-1">
-                    {user.elo || 1000}
+                    {user.elo ?? 0}
                   </div>
                   <div className="text-sm text-[#AAAAAA]">ELO</div>
                 </div>

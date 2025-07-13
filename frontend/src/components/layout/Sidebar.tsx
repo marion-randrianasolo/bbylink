@@ -175,7 +175,7 @@ export default function Sidebar() {
               </h2>
 
               <p className="text-[#EA1846] font-nubernext-extended-heavy text-sm mt-1">
-                XP: {user.xp || 1250}
+                XP: {user.xp ?? 0}
               </p>
 
               <div className="flex items-center gap-2 mt-2">
@@ -198,7 +198,7 @@ export default function Sidebar() {
                 />
                 <div className="text-center">
                   <div className="text-white font-nubernext-extended-heavy text-lg">
-                    {user.coins || 0}
+                    {user.coins ?? 0}
                   </div>
                   <div className="text-[#666666] text-xs uppercase tracking-wide">COINS</div>
                 </div>
@@ -214,7 +214,7 @@ export default function Sidebar() {
                 />
                 <div className="text-center">
                   <div className="text-white font-nubernext-extended-heavy text-lg">
-                    {user.elo || 1000}
+                    {user.elo ?? 0}
                   </div>
                   <div className="text-[#666666] text-xs uppercase tracking-wide">ELO</div>
                 </div>
