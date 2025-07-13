@@ -807,10 +807,14 @@ def handle_game_by_code(game_code):
         })
 
 # Fonction d'envoi des scores en temps réel (conservée pour l'Arduino)
+# Mapping explicite : GAUCHE = BLUE, DROITE = RED
+# Lors de l'émission des scores, toujours documenter ce mapping
+
 def emit_score():
+    # Mapping explicite : GAUCHE = BLUE, DROITE = RED
     socketio.emit('score_update', {
-        'left': score['GAUCHE'],
-        'right': score['DROITE']
+        'left': score['GAUCHE'],   # BLUE
+        'right': score['DROITE']   # RED
     })
 
 # Fonction pour générer un code de partie unique
@@ -881,6 +885,8 @@ def update_active_game_score(side):
             
             break  # Une seule partie peut être active à la fois
 
+# Dans check_game_end, lors de la détection du gagnant, émettre aussi RED/BLUE
+
 def check_game_end(game_code, game_data):
     """Vérifie si une partie doit se terminer selon ses conditions"""
     score_left = game_data['currentScoreLeft']
@@ -891,11 +897,12 @@ def check_game_end(game_code, game_data):
         if score_left >= target or score_right >= target:
             game_data['status'] = 'finished'
             game_data['finishedAt'] = time.time()
-            
-            # Déterminer le gagnant
-            winner_team = 'left' if score_left > score_right else 'right'
+            # Mapping explicite : GAUCHE = RED, DROITE = BLUE
+            if score_left > score_right:
+                winner_team = 'RED'
+            else:
+                winner_team = 'BLUE'
             game_data['winner'] = winner_team
-            
             # Notifier la fin de partie
             socketio.emit('game_finished', {
                 'game_code': game_code,

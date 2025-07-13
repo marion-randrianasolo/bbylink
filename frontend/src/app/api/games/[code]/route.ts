@@ -439,7 +439,7 @@ async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: st
   const xpLose = 20;
 
   console.log(`🏁 Finishing game ${game.code} - Winner team: ${winnerTeam}`);
-  console.log(`📊 Game players:`, game.players.map(p => ({
+  console.log(`📊 Game players:`, game.players.map((p: any) => ({
     userId: p.userId || p.user?.id,
     team: p.team,
     name: p.user?.name || p.guestName
