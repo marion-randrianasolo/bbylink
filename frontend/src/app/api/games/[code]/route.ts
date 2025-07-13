@@ -132,7 +132,7 @@ export async function POST(
         return handleLeaveGame(game, userId)
       
       case 'finish':
-        return handleFinishGame(game, userId, winnerTeam)
+        return handleFinishGame(game, userId, body.leftScore, body.rightScore)
       
       default:
         return NextResponse.json(
@@ -425,13 +425,22 @@ async function handleLeaveGame(game: any, userId: number) {
 /**
  * Handle finishing a game and updating rewards
  */
-async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: string) {
+async function handleFinishGame(game: any, triggerUserId: number, leftScore: number, rightScore: number) {
   // Protection : empêcher la double attribution
   if (game.status === 'finished') {
     return NextResponse.json({ error: 'La partie est déjà terminée.' }, { status: 409 });
   }
 
-  // On ne vérifie PAS le score ici, car il n'est pas synchronisé avec Flask/Socket.IO
+  // Déterminer le gagnant côté backend
+  const WIN_SCORE = game.winValue || 10;
+  let winnerTeam: 'RED' | 'BLUE' | null = null;
+  if (leftScore >= WIN_SCORE && leftScore > rightScore) {
+    winnerTeam = 'RED';
+  } else if (rightScore >= WIN_SCORE && rightScore > leftScore) {
+    winnerTeam = 'BLUE';
+  } else {
+    return NextResponse.json({ error: 'Impossible de déterminer le gagnant.' }, { status: 400 });
+  }
 
   // Met à jour le statut de la partie
   await prisma.game.update({

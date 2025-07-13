@@ -183,23 +183,12 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
     
     // Appel API pour finir la partie et récompenser
     try {
-      const myTeam = gameData.players.find(p => p.user?.id === user?.id)?.team;
-      let winnerTeam: 'RED' | 'BLUE' | undefined = undefined;
-      // GAUCHE = RED, DROITE = BLUE
-      if (score.left >= WIN_SCORE && leftTeam.length > 0) {
-        winnerTeam = 'RED';
-      } else if (score.right >= WIN_SCORE && rightTeam.length > 0) {
-        winnerTeam = 'BLUE';
-      } else {
-        // Fallback: équipe adverse
-        winnerTeam = myTeam === 'RED' ? 'BLUE' : 'RED';
-      }
-      
-      if (user && winnerTeam) {
+      if (user) {
         console.log('[API] Fin de partie : appel /api/games/' + gameData.code, {
           action: 'finish',
           userId: user.id,
-          winnerTeam
+          leftScore: score.left,
+          rightScore: score.right
         });
         const res = await fetch(`/api/games/${gameData.code}`, {
           method: 'POST',
@@ -207,7 +196,8 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
           body: JSON.stringify({
             action: 'finish',
             userId: user.id,
-            winnerTeam
+            leftScore: score.left,
+            rightScore: score.right
           })
         });
         if (res.ok) {
