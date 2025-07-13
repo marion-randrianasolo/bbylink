@@ -192,6 +192,7 @@ class SocketService {
    * @param gameData - Game creation data
    */
   createGame(gameData: {
+    game_code?: string // Ajouté pour permettre la transmission du code Next.js
     host_id: number
     host_name: string
     host_email?: string      // NOUVEAU: Email pour génération avatar serveur

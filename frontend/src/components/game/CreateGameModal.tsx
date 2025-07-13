@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { socketService } from '@/lib/socket'
-import AvatarService from '@/lib/avatarService'
 
 interface Table {
   id: number
@@ -159,11 +158,32 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
         }
       })
 
-      // Create the game via Socket.IO avec email pour système d'avatar serveur
+      // 1. Créer la partie via l'API Next.js
+      const res = await fetch('/api/games', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostId: currentUser.id,
+          tableId: selectedTable,
+          gameMode,
+          winCondition,
+          winValue,
+          maxGoals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.game) {
+        console.error('Erreur lors de la création de la partie côté Next.js:', data.error);
+        setIsLoading(false);
+        return;
+      }
+      const nextjsGame = data.game;
+      // 2. Transmettre le code Next.js à Flask via Socket.IO
       socketService.createGame({
+        game_code: nextjsGame.code, // Utiliser le code généré par Next.js
         host_id: currentUser.id,
         host_name: currentUser.name,
-        host_email: currentUser.email || '',  // NOUVEAU: Email pour génération avatar
+        host_email: currentUser.email || '',
         host_avatar: currentUser.avatar,
         host_first_name: currentUser.firstName,
         host_last_name: currentUser.lastName,
@@ -174,7 +194,7 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
         win_condition: winCondition,
         win_value: winValue,
         max_goals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
-      })
+      });
 
       // Set timeout for create attempt
       setTimeout(() => {
