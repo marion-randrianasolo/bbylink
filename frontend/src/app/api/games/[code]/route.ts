@@ -463,33 +463,31 @@ async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: st
 
   for (const p of game.players) {
     const playerUserId = p.userId || p.user?.id;
-    if (!playerUserId) {
-      continue;
-    }
+    if (!playerUserId) continue;
+  
     const isWinner = p.team === winnerTeam;
-    const user = await prisma.user.findUnique({ 
-      where: { id: playerUserId }, 
-      select: { elo: true, coins: true, xp: true } 
+  
+    const user = await prisma.user.findUnique({
+      where: { id: playerUserId },
+      select: { elo: true, coins: true, xp: true }
     });
+  
     const currentElo = user?.elo ?? 1000;
     const currentCoins = user?.coins ?? 0;
     const currentXp = user?.xp ?? 1250;
-    let newElo, newCoins, newXp;
-    if (isWinner) {
-      newElo = currentElo + eloDelta;
-      newCoins = currentCoins + coinsDelta;
-      newXp = currentXp + xpWin;
-    } else {
-      newElo = Math.max(0, currentElo - eloDelta);
-      newCoins = currentCoins + 0;
-      newXp = currentXp + xpLose;
-    }
+  
+    const newXp = currentXp + (isWinner ? 100 : 20);
+    const newCoins = isWinner ? currentCoins + 50 : currentCoins; // pas de gain en cas de défaite
+    const newElo = isWinner
+      ? currentElo + 50
+      : Math.max(0, currentElo - 50); // jamais en-dessous de 0
+  
     await prisma.user.update({
       where: { id: playerUserId },
       data: {
-        elo: newElo,
+        xp: newXp,
         coins: newCoins,
-        xp: newXp
+        elo: newElo
       }
     });
   }
