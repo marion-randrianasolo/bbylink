@@ -216,8 +216,8 @@ export async function POST(request: NextRequest) {
       data: {
         gameId: game.id,
         userId: hostId,
-        team: 'left',
-        position: gameMode === '2v2' ? 'attack' : 'player',
+        team: 'RED',
+        position: gameMode === '2v2' ? 'ATTACKER' : 'PLAYER',
         isGuest: false,
       }
     })
