@@ -362,7 +362,7 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
           const isLeftWinner = score.left >= WIN_SCORE
           const winnerTeam = isLeftWinner ? leftTeam : rightTeam
           const winnerAvatar = winnerTeam[0]?.user?.avatar
-          const isUserWinner = winnerTeam.some(p => p.user?.id === gameData.host.id) // Simplification pour demo
+          const isUserWinner = winnerTeam.some(p => p.user?.id === user?.id) // Correction ici
           
           return (
             <div className="flex-1 flex items-center justify-center px-6">
