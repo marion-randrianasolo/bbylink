@@ -428,21 +428,31 @@ async function handleFinishGame(game: any, userId: number, winnerTeam: string) {
     data: { status: 'finished', finishedAt: new Date() }
   });
 
-  // Récompenses (à adapter selon ta logique)
+  // Récompenses
   const eloDelta = 50;
   const coinsDelta = 50;
-  const xpDelta = 100;
+  const xpWin = 100;
+  const xpLose = 20;
 
-  // Met à jour chaque joueur
   for (const p of game.players) {
     if (!p.userId) continue; // skip guests
     const isWinner = p.team === winnerTeam;
+
+    // Récupérer l'elo actuel pour éviter de descendre sous 0
+    const user = await prisma.user.findUnique({ where: { id: p.userId }, select: { elo: true } });
+    let newElo = user?.elo ?? 0;
+    if (isWinner) {
+      newElo += eloDelta;
+    } else {
+      newElo = Math.max(0, newElo - eloDelta);
+    }
+
     await prisma.user.update({
       where: { id: p.userId },
       data: {
-        elo: { increment: isWinner ? eloDelta : -eloDelta },
+        elo: newElo,
         coins: { increment: isWinner ? coinsDelta : 0 },
-        xp: { increment: isWinner ? xpDelta : 0 }
+        xp: { increment: isWinner ? xpWin : xpLose }
       }
     });
   }
