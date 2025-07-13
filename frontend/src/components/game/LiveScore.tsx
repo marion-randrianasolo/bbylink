@@ -70,7 +70,7 @@ interface ScoreData {
  * Composant Live Score pour afficher le score en temps réel
  */
 export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScoreProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [score, setScore] = useState<ScoreData>({ left: 0, right: 0 })
   const [gameOver, setGameOver] = useState(false)
   const [winner, setWinner] = useState<string>('')
@@ -204,6 +204,10 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
         });
         if (res.ok) {
           console.log('[API] Succès persistance elo/xp/coins');
+          // Rafraîchir le profil utilisateur pour mettre à jour l'UI
+          if (refreshProfile) {
+            await refreshProfile();
+          }
         } else {
           const data = await res.json();
           console.error('[API] Erreur persistance elo/xp/coins:', data.error);
