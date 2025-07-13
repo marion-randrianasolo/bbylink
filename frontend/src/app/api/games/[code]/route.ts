@@ -426,6 +426,29 @@ async function handleLeaveGame(game: any, userId: number) {
  * Handle finishing a game and updating rewards
  */
 async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: string) {
+  // Vérifier si la partie est déjà finie
+  if (game.status === 'finished') {
+    return NextResponse.json({ error: 'La partie est déjà terminée.' }, { status: 409 });
+  }
+
+  // Vérification du score pour valider le gagnant
+  // On suppose que game.scoreLeft et game.scoreRight existent (sinon, à adapter)
+  const WIN_SCORE = game.winValue || 10;
+  const leftScore = game.scoreLeft ?? 0;
+  const rightScore = game.scoreRight ?? 0;
+  let expectedWinner: 'RED' | 'BLUE';
+  if (leftScore >= WIN_SCORE && leftScore > rightScore) {
+    expectedWinner = 'RED';
+  } else if (rightScore >= WIN_SCORE && rightScore > leftScore) {
+    expectedWinner = 'BLUE';
+  } else {
+    // Si égalité ou score non atteint, refuse la fin de partie
+    return NextResponse.json({ error: 'Le score ne permet pas de déterminer un gagnant.' }, { status: 400 });
+  }
+  if (winnerTeam !== expectedWinner) {
+    return NextResponse.json({ error: 'winnerTeam ne correspond pas au score réel.' }, { status: 400 });
+  }
+
   // Met à jour le statut de la partie
   await prisma.game.update({
     where: { id: game.id },
@@ -438,48 +461,29 @@ async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: st
   const xpWin = 100;
   const xpLose = 20;
 
-  console.log(`🏁 Finishing game ${game.code} - Winner team: ${winnerTeam}`);
-  console.log(`📊 Game players:`, game.players.map((p: any) => ({
-    userId: p.userId || p.user?.id,
-    team: p.team,
-    name: p.user?.name || p.guestName
-  })));
-
   for (const p of game.players) {
     const playerUserId = p.userId || p.user?.id;
     if (!playerUserId) {
-      console.log(`⏭️ Skipping guest player: ${p.guestName || 'Unknown'}`);
       continue;
     }
-    
     const isWinner = p.team === winnerTeam;
     const user = await prisma.user.findUnique({ 
       where: { id: playerUserId }, 
       select: { elo: true, coins: true, xp: true } 
     });
-    
     const currentElo = user?.elo ?? 1000;
     const currentCoins = user?.coins ?? 0;
     const currentXp = user?.xp ?? 1250;
-    
-    // Calcul des nouvelles valeurs
     let newElo, newCoins, newXp;
-    
     if (isWinner) {
       newElo = currentElo + eloDelta;
       newCoins = currentCoins + coinsDelta;
       newXp = currentXp + xpWin;
     } else {
-      newElo = Math.max(0, currentElo - eloDelta); // Minimum 0
-      newCoins = currentCoins + 0; // Pas de coins pour le perdant
+      newElo = Math.max(0, currentElo - eloDelta);
+      newCoins = currentCoins + 0;
       newXp = currentXp + xpLose;
     }
-    
-    console.log(`👤 Player ${playerUserId} (${p.user?.name || 'Unknown'})`);
-    console.log(`   Team: ${p.team} | WinnerTeam: ${winnerTeam} | isWinner: ${isWinner}`);
-    console.log(`   Current - ELO: ${currentElo} | COINS: ${currentCoins} | XP: ${currentXp}`);
-    console.log(`   New - ELO: ${newElo} | COINS: ${newCoins} | XP: ${newXp}`);
-    
     await prisma.user.update({
       where: { id: playerUserId },
       data: {
@@ -490,6 +494,5 @@ async function handleFinishGame(game: any, triggerUserId: number, winnerTeam: st
     });
   }
 
-  console.log(`✅ Game ${game.code} finished - All rewards updated`);
   return NextResponse.json({ success: true });
 } 
