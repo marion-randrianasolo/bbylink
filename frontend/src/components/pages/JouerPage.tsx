@@ -148,87 +148,47 @@ export default function JouerPage() {
   }
 
   const handleFinalizeGame = async () => {
-    if (!user || !selectedTable) return
+    if (!user || !selectedTable) return;
 
-    setIsLoading(true)
-    
+    setIsLoading(true);
     try {
+      // 1. Persister la partie côté Next.js/Neon
+      console.log('Début création partie : appel API Next.js');
+      const res = await fetch('/api/games', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostId: user.id,
+          tableId: selectedTable,
+          gameMode,
+          winCondition,
+          winValue,
+          maxGoals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.game) {
+        console.error('Erreur création partie Next.js:', data.error);
+        setIsLoading(false);
+        alert('Erreur création partie (persistance): ' + (data.error || 'Erreur inconnue'));
+        return;
+      }
+      const nextjsGame = data.game;
+      console.log('✅ Partie persistée en base Neon (Next.js)', nextjsGame);
+
+      // 2. Ensuite, transmettre à Flask/Socket.IO
       const currentUser = {
         ...user,
         avatar: user.avatar || ''
-      }
-      
-      if (!socketService.isConnected()) {
-        await socketService.connect()
-      }
-
-      const selectedTableDetails = tables.find(t => t.id === selectedTable)
+      };
+      const selectedTableDetails = tables.find(t => t.id === selectedTable);
       if (!selectedTableDetails) {
-        console.error('Table introuvable')
-        setIsLoading(false)
-        return
+        console.error('Table introuvable');
+        setIsLoading(false);
+        return;
       }
-
-      const cleanup = socketService.onGameEvents({
-        onGameCreated: (response) => {
-          if (response.status === 'success' && response.game_data) {
-            const convertedGameData = {
-              id: 0,
-              code: response.game_data.code,
-              status: response.game_data.status,
-              gameMode: response.game_data.game_mode,
-              winCondition: response.game_data.win_condition,
-              winValue: response.game_data.win_value,
-              maxGoals: response.game_data.max_goals,
-              host: {
-                id: response.game_data.host_id,
-                name: response.game_data.host_name,
-                firstName: currentUser.firstName || currentUser.name.split(' ')[0],
-                lastName: currentUser.lastName || currentUser.name.split(' ').slice(1).join(' '),
-                avatar: response.game_data?.players?.find(p => p.user_id === response.game_data?.host_id)?.user_avatar || currentUser.avatar,
-                elo: response.game_data?.players?.find(p => p.user_id === response.game_data?.host_id)?.user_elo || currentUser.elo,
-              },
-              table: {
-                id: response.game_data.table_id,
-                name: response.game_data.table_name,
-                location: selectedTableDetails.location,
-              },
-              players: response.game_data.players.map((p: any) => ({
-                id: p.user_id || 0,
-                team: p.team,
-                position: p.position,
-                isGuest: p.is_guest,
-                guestName: p.is_guest ? p.user_name : undefined,
-                user: p.user_id ? {
-                  id: p.user_id,
-                  name: p.user_name,
-                  firstName: p.user_first_name || p.user_name.split(' ')[0],
-                  lastName: p.user_last_name || p.user_name.split(' ').slice(1).join(' '),
-                  avatar: p.user_avatar || '',
-                  elo: p.user_elo || 0,
-                } : undefined,
-              }))
-            }
-            
-            cleanup()
-            setCurrentGame(convertedGameData)
-            setIsInLobby(true)
-            setIsCreatingGame(false)
-            resetCreateForm()
-          } else {
-            console.error('Erreur lors de la création:', response.message)
-            setIsLoading(false)
-            cleanup()
-          }
-        },
-        onError: (errorMessage: string) => {
-          console.error('Erreur lors de la création de la partie:', errorMessage)
-          setIsLoading(false)
-          cleanup()
-        }
-      })
-
       socketService.createGame({
+        game_code: nextjsGame.code,
         host_id: currentUser.id,
         host_name: currentUser.name,
         host_email: currentUser.email || '',
@@ -242,21 +202,19 @@ export default function JouerPage() {
         win_condition: winCondition,
         win_value: winValue,
         max_goals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
-      })
+      });
+      console.log('🎮 Partie transmise à Flask/Socket.IO');
 
-      setTimeout(() => {
-        if (isLoading) {
-          console.error('Timeout - impossible de créer la partie')
-          setIsLoading(false)
-          cleanup()
-        }
-      }, 10000)
-
+      // Simuler le callback comme avant
+      setCurrentGame(nextjsGame);
+      setIsInLobby(true);
+      setIsCreatingGame(false);
+      resetCreateForm();
     } catch (error) {
-      console.error('Erreur lors de la création de la partie:', error)
-      setIsLoading(false)
+      console.error('Erreur lors de la création de la partie:', error);
+      setIsLoading(false);
     }
-  }
+  };
 
   const onGameJoined = (gameData: GameData) => {
     console.log('Partie rejointe:', gameData)

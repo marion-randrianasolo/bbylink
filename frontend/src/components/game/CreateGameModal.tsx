@@ -72,17 +72,16 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
   }
 
   const handleCreateGame = async () => {
-    if (!user || !selectedTable) return
+    if (!user || !selectedTable) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Log pour debug
-      console.log('Début création partie : appel API Next.js')
+      // 1. Persister la partie côté Next.js/Neon
+      console.log('Début création partie : appel API Next.js');
       const currentUser = {
         ...user,
         avatar: user.avatar || ''
-      }
-      // 1. Créer la partie via l'API Next.js (persistance Neon obligatoire)
+      };
       const res = await fetch('/api/games', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,7 +104,7 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
       const nextjsGame = data.game;
       console.log('✅ Partie persistée en base Neon (Next.js)', nextjsGame);
 
-      // 2. Transmettre le code Next.js à Flask via Socket.IO (temps réel)
+      // 2. Transmettre à Flask/Socket.IO
       if (!socketService.isConnected()) {
         await socketService.connect();
       }
