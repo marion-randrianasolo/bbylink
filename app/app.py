@@ -380,13 +380,13 @@ def render_tables_admin_section():
               ${updatingTable === table.id ? '<span style=\"color:#FFD700;\">⏳</span>' : ''}
               <button
                 onclick="setTable(${table.id}, true)"
-                style="background:${table.is_available ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
+                style="background:${!table.is_available ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
                 ${table.is_available ? 'disabled' : ''}
                 ${updatingTable === table.id ? 'disabled' : ''}
-              >Dispo${table.is_available ? ' ✓' : ''}</button>
+              >Dispo${!table.is_available ? ' ✓' : ''}</button>
               <button
                 onclick="setTable(${table.id}, false)"
-                style="background:${!table.is_available ? '#e74c3c' : '#EA1846'};color:white;font-weight:bold;"
+                style="background:${table.is_available ? '#e74c3c' : '#a71d2a'};color:white;font-weight:bold;"
                 ${!table.is_available ? 'disabled' : ''}
                 ${updatingTable === table.id ? 'disabled' : ''}
               >Occupée${!table.is_available ? ' ✓' : ''}</button>
