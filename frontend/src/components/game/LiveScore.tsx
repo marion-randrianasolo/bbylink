@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import socketService from '@/lib/socket'
 import { useAuth } from '@/contexts/AuthContext'
+import { getFlaskUrl } from '@/lib/config'
 
 interface GameData {
   id: number
@@ -222,16 +223,66 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
   }
 
   /**
-   * Reset du score (admin/host seulement)
-   */
-  /**
    * Nouvelle partie
    */
-  const handleNewGame = () => {
-    setGameOver(false)
-    setWinner('')
-    setScore({ left: 0, right: 0 })
-    gameEndedRef.current = false // Reset le flag pour la nouvelle partie
+  const handleNewGame = async () => {
+    try {
+      console.log('[API] Création nouvelle partie avec le même code:', gameData.code);
+      
+      // Appel API pour créer une nouvelle partie avec un nouveau code
+      const res = await fetch(`/api/games/${gameData.code}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'new_game',
+          userId: user?.id
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[API] Nouvelle partie créée:', data.game);
+        console.log('[API] Nouveau code:', data.game.code);
+        
+        // Reset du score Flask/Arduino avec le nouveau code
+        try {
+          const flaskRes = await fetch(`${getFlaskUrl()}/api/games/${data.game.code}/reset-score`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: user?.id
+            })
+          });
+          
+          if (flaskRes.ok) {
+            console.log('[Flask] Score Arduino reseté avec succès pour le nouveau code');
+          } else {
+            console.warn('[Flask] Erreur lors du reset du score Arduino');
+          }
+        } catch (flaskErr) {
+          console.warn('[Flask] Impossible de contacter le serveur Flask:', flaskErr);
+        }
+        
+        // Reset local state
+        setGameOver(false);
+        setWinner('');
+        setScore({ left: 0, right: 0 });
+        gameEndedRef.current = false;
+        
+        // Mettre à jour le gameData avec la nouvelle partie
+        if (data.game) {
+          // Notifier le parent que la partie a changé avec le nouveau code
+          onGameEnd(); // Cela va rediriger vers le lobby avec la nouvelle partie
+        }
+      } else {
+        const errorData = await res.json();
+        console.error('[API] Erreur création nouvelle partie:', errorData.error);
+        alert('Erreur lors de la création de la nouvelle partie: ' + errorData.error);
+      }
+    } catch (err) {
+      console.error('Erreur API nouvelle partie:', err);
+      alert('Erreur lors de la création de la nouvelle partie');
+    }
   }
 
   return (

@@ -134,6 +134,9 @@ export async function POST(
       case 'finish':
         return handleFinishGame(game, userId, body.leftScore, body.rightScore)
       
+      case 'new_game':
+        return handleNewGame(game, userId)
+      
       default:
         return NextResponse.json(
           { error: 'Action non supportée' },
@@ -484,4 +487,154 @@ async function handleFinishGame(game: any, triggerUserId: number, leftScore: num
   }
 
   return NextResponse.json({ success: true });
+}
+
+/**
+ * Handle creating a new game with the same code (for rematch)
+ */
+async function handleNewGame(game: any, userId: number) {
+  // Vérifier que c'est l'hôte qui demande une nouvelle partie
+  if (game.hostId !== userId) {
+    return NextResponse.json(
+      { error: 'Seul l\'hôte peut créer une nouvelle partie' },
+      { status: 403 }
+    )
+  }
+
+  // Générer un nouveau code unique de 4 chiffres
+  let newCode: string
+  let attempts = 0
+  const maxAttempts = 100
+
+  do {
+    newCode = Math.floor(1000 + Math.random() * 9000).toString()
+    const existingGame = await prisma.game.findUnique({
+      where: { code: newCode }
+    })
+    
+    if (!existingGame) break
+    
+    attempts++
+  } while (attempts < maxAttempts)
+
+  if (attempts >= maxAttempts) {
+    return NextResponse.json(
+      { error: 'Impossible de générer un code unique pour la nouvelle partie' },
+      { status: 500 }
+    )
+  }
+
+  // Créer une nouvelle partie avec un nouveau code
+  const newGame = await prisma.game.create({
+    data: {
+      code: newCode, // Nouveau code unique
+      hostId: game.hostId,
+      tableId: game.tableId,
+      gameMode: game.gameMode,
+      winCondition: game.winCondition,
+      winValue: game.winValue,
+      maxGoals: game.maxGoals,
+      status: 'waiting',
+      scoreLeft: 0, // Reset des scores selon le schéma Prisma
+      scoreRight: 0,
+      maxScore: game.maxScore || 10, // Ajouté selon le schéma
+    },
+    include: {
+      host: {
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          elo: true,
+          skillLevel: true,
+          position: true,
+        }
+      },
+      table: {
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          isAvailable: true,
+        }
+      },
+      players: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              elo: true,
+              skillLevel: true,
+              position: true,
+            }
+          }
+        }
+      }
+    }
+  })
+
+  // Ajouter l'hôte comme premier joueur dans la nouvelle partie
+  await prisma.gamePlayer.create({
+    data: {
+      gameId: newGame.id,
+      userId: game.hostId,
+      team: 'RED',
+      position: game.gameMode === '2v2' ? 'ATTACKER' : 'PLAYER',
+      isGuest: false,
+    }
+  })
+
+  // Récupérer la partie mise à jour avec le joueur hôte
+  const updatedNewGame = await prisma.game.findUnique({
+    where: { id: newGame.id },
+    include: {
+      host: {
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          elo: true,
+          skillLevel: true,
+          position: true,
+        }
+      },
+      table: {
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          isAvailable: true,
+        }
+      },
+      players: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              elo: true,
+              skillLevel: true,
+              position: true,
+            }
+          }
+        }
+      }
+    }
+  })
+
+  return NextResponse.json({ 
+    game: updatedNewGame,
+    message: 'Nouvelle partie créée avec un nouveau code'
+  })
 } 

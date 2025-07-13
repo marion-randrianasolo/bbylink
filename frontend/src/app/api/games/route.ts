@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
         winCondition,
         winValue,
         maxGoals,
+        maxScore: winValue, // Ajouté selon le schéma Prisma
         status: 'waiting',
       },
       include: {
