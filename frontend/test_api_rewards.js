@@ -154,7 +154,7 @@ async function auditGameByCode(gameCode, userIds) {
 
 // === EXEMPLE D'UTILISATION ===
 // Décommente et remplace le code/ids pour auditer une partie réelle
- await auditGameByCode('9461', [13, 14]);
+ await auditGameByCode('3558', [13, 14]);
 
 (async () => {
   // 1. Victoire du host (peu importe qui est RED/BLUE)

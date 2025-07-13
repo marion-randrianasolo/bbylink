@@ -80,6 +80,7 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
   const winSoundRef = useRef<HTMLAudioElement>(null)
   const leftScoreRef = useRef<HTMLSpanElement>(null)
   const rightScoreRef = useRef<HTMLSpanElement>(null)
+  const gameEndedRef = useRef(false); // Ajouté pour éviter les appels multiples
 
   // Configuration du jeu
   const WIN_SCORE = gameData.winValue || 10
@@ -117,9 +118,11 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
             
             // Vérifier la victoire (victoire claire uniquement)
             if (
-              (scoreData.left >= WIN_SCORE && scoreData.left > scoreData.right) ||
-              (scoreData.right >= WIN_SCORE && scoreData.right > scoreData.left)
+              !gameEndedRef.current &&
+              ((scoreData.left >= WIN_SCORE && scoreData.left > scoreData.right) ||
+                (scoreData.right >= WIN_SCORE && scoreData.right > scoreData.left))
             ) {
+              gameEndedRef.current = true;
               handleGameEnd(scoreData.left, scoreData.right);
             }
           },
@@ -228,6 +231,7 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
     setGameOver(false)
     setWinner('')
     setScore({ left: 0, right: 0 })
+    gameEndedRef.current = false // Reset le flag pour la nouvelle partie
   }
 
   return (
