@@ -75,90 +75,14 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
     if (!user || !selectedTable) return
 
     setIsLoading(true)
-    
     try {
-      // SYSTÈME SIMPLIFIÉ: Utiliser directement l'avatar de la base (comme PlayerXPIndicator)
-      console.log('🎭 Utilisation avatar direct depuis base de données...')
+      // Log pour debug
+      console.log('Début création partie : appel API Next.js')
       const currentUser = {
         ...user,
-        avatar: user.avatar || '' // Utiliser directement l'avatar de la base
+        avatar: user.avatar || ''
       }
-      
-      console.log(`✅ Avatar utilisé pour création (DB direct): ${currentUser.avatar}`)
-      // Ensure socket connection
-      if (!socketService.isConnected()) {
-        await socketService.connect()
-      }
-
-      // Find selected table details
-      const selectedTableDetails = tables.find(t => t.id === selectedTable)
-      if (!selectedTableDetails) {
-        console.error('Table introuvable')
-        setIsLoading(false)
-        return
-      }
-
-      // Set up event listeners for create response
-      const cleanup = socketService.onGameEvents({
-        onGameCreated: (response) => {
-          if (response.status === 'success' && response.game_data) {
-            // Convert Flask format to NextJS format for compatibility
-            const convertedGameData = {
-              id: 0, // Flask doesn't provide SQL ID
-              code: response.game_data.code,
-              status: response.game_data.status,
-              gameMode: response.game_data.game_mode,
-              winCondition: response.game_data.win_condition,
-              winValue: response.game_data.win_value,
-              maxGoals: response.game_data.max_goals,
-              host: {
-                id: response.game_data.host_id,
-                name: response.game_data.host_name,
-                firstName: currentUser.firstName || currentUser.name.split(' ')[0],
-                lastName: currentUser.lastName || currentUser.name.split(' ').slice(1).join(' '),
-                avatar: response.game_data?.players?.find(p => p.user_id === response.game_data?.host_id)?.user_avatar || currentUser.avatar,
-                elo: response.game_data?.players?.find(p => p.user_id === response.game_data?.host_id)?.user_elo || currentUser.elo,
-              },
-              table: {
-                id: response.game_data.table_id,
-                name: response.game_data.table_name,
-                location: selectedTableDetails.location,
-              },
-              players: response.game_data.players.map((p: any) => ({
-                id: p.user_id || 0,
-                team: p.team,
-                position: p.position,
-                isGuest: p.is_guest,
-                guestName: p.is_guest ? p.user_name : undefined,
-                user: p.user_id ? {
-                  id: p.user_id,
-                  name: p.user_name,
-                  firstName: p.user_first_name || p.user_name.split(' ')[0],
-                  lastName: p.user_last_name || p.user_name.split(' ').slice(1).join(' '),
-                  avatar: p.user_avatar || '',
-                  elo: p.user_elo || 0,
-                } : undefined,
-              }))
-            }
-            
-            cleanup() // Clean up listeners
-            onGameCreated(convertedGameData)
-            onClose()
-            resetForm()
-          } else {
-            console.error('Erreur lors de la création:', response.message)
-            setIsLoading(false)
-            cleanup()
-          }
-        },
-        onError: (errorMessage: string) => {
-          console.error('Erreur lors de la création de la partie:', errorMessage)
-          setIsLoading(false)
-          cleanup()
-        }
-      })
-
-      // 1. Créer la partie via l'API Next.js
+      // 1. Créer la partie via l'API Next.js (persistance Neon obligatoire)
       const res = await fetch('/api/games', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -175,12 +99,24 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
       if (!res.ok || !data.game) {
         console.error('Erreur lors de la création de la partie côté Next.js:', data.error);
         setIsLoading(false);
+        alert('Erreur lors de la création de la partie (persistance en base échouée): ' + (data.error || 'Erreur inconnue'));
         return;
       }
       const nextjsGame = data.game;
-      // 2. Transmettre le code Next.js à Flask via Socket.IO
+      console.log('✅ Partie persistée en base Neon (Next.js)', nextjsGame);
+
+      // 2. Transmettre le code Next.js à Flask via Socket.IO (temps réel)
+      if (!socketService.isConnected()) {
+        await socketService.connect();
+      }
+      const selectedTableDetails = tables.find(t => t.id === selectedTable);
+      if (!selectedTableDetails) {
+        console.error('Table introuvable');
+        setIsLoading(false);
+        return;
+      }
       socketService.createGame({
-        game_code: nextjsGame.code, // Utiliser le code généré par Next.js
+        game_code: nextjsGame.code,
         host_id: currentUser.id,
         host_name: currentUser.name,
         host_email: currentUser.email || '',
@@ -195,19 +131,16 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
         win_value: winValue,
         max_goals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
       });
+      console.log('🎮 Partie transmise à Flask/Socket.IO');
 
-      // Set timeout for create attempt
-      setTimeout(() => {
-        if (isLoading) {
-          console.error('Timeout - impossible de créer la partie')
-          setIsLoading(false)
-          cleanup()
-        }
-      }, 10000)
-
+      // Callback et reset
+      onGameCreated(nextjsGame);
+      onClose();
+      resetForm();
     } catch (error) {
-      console.error('Erreur lors de la création de la partie:', error)
-      setIsLoading(false)
+      console.error('Erreur lors de la création de la partie:', error);
+      setIsLoading(false);
+      alert('Erreur JS lors de la création de la partie: ' + error);
     }
   }
 
