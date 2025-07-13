@@ -161,7 +161,6 @@ async function handleJoinGame(game: any, userId: number, guestName?: string, req
   }
 
   const maxPlayers = game.gameMode === '1v1' ? 2 : 4
-  
   if (game.players.length >= maxPlayers) {
     return NextResponse.json(
       { error: 'Partie complète' },
@@ -177,20 +176,25 @@ async function handleJoinGame(game: any, userId: number, guestName?: string, req
     )
   }
 
-  // Determine team and position
+  // Correction logique d'attribution d'équipe
   let team: string
   let position: string
 
   if (game.gameMode === '1v1') {
-    // For 1v1, simple RED/BLUE assignment
-    team = game.players.length === 0 ? 'RED' : 'BLUE'
+    // Premier joueur RED, deuxième BLUE
+    const redCount = game.players.filter((p: any) => p.team === 'RED').length
+    const blueCount = game.players.filter((p: any) => p.team === 'BLUE').length
+    if (redCount === 0) {
+      team = 'RED'
+    } else {
+      team = 'BLUE'
+    }
     position = 'PLAYER'
   } else {
-    // For 2v2, more complex assignment
+    // 2v2 : équilibrer les équipes
     const redPlayers = game.players.filter((p: any) => p.team === 'RED')
     const bluePlayers = game.players.filter((p: any) => p.team === 'BLUE')
-    
-    if (redPlayers.length <= bluePlayers.length) {
+    if (redPlayers.length < 2) {
       team = 'RED'
       position = redPlayers.length === 0 ? 'ATTACKER' : 'DEFENDER'
     } else {
