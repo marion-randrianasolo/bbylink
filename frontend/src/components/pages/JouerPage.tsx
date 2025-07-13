@@ -177,27 +177,36 @@ export default function JouerPage() {
       console.log('✅ Partie persistée en base Neon (Next.js)', nextjsGame);
 
       // 2. Ensuite, transmettre à Flask/Socket.IO
-      const currentUser = {
-        ...user,
-        avatar: user.avatar || ''
-      };
-      const selectedTableDetails = tables.find(t => t.id === selectedTable);
-      if (!selectedTableDetails) {
-        console.error('Table introuvable');
-        setIsLoading(false);
-        return;
+      if (!socketService.isConnected()) {
+        await socketService.connect();
       }
+      console.log('DEBUG: Appel à socketService.createGame (connexion OK)', {
+        game_code: nextjsGame.code,
+        host_id: user.id,
+        host_name: user.name,
+        host_email: user.email || '',
+        host_avatar: user.avatar,
+        host_first_name: user.firstName,
+        host_last_name: user.lastName,
+        host_elo: user.elo,
+        table_id: selectedTable,
+        table_name: tables.find(t => t.id === selectedTable)?.name || '',
+        game_mode: gameMode,
+        win_condition: winCondition,
+        win_value: winValue,
+        max_goals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
+      });
       socketService.createGame({
         game_code: nextjsGame.code,
-        host_id: currentUser.id,
-        host_name: currentUser.name,
-        host_email: currentUser.email || '',
-        host_avatar: currentUser.avatar,
-        host_first_name: currentUser.firstName,
-        host_last_name: currentUser.lastName,
-        host_elo: currentUser.elo,
+        host_id: user.id,
+        host_name: user.name,
+        host_email: user.email || '',
+        host_avatar: user.avatar,
+        host_first_name: user.firstName,
+        host_last_name: user.lastName,
+        host_elo: user.elo,
         table_id: selectedTable,
-        table_name: selectedTableDetails.name,
+        table_name: tables.find(t => t.id === selectedTable)?.name || '',
         game_mode: gameMode,
         win_condition: winCondition,
         win_value: winValue,

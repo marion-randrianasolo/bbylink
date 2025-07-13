@@ -108,6 +108,22 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
       if (!socketService.isConnected()) {
         await socketService.connect();
       }
+      console.log('DEBUG: Appel à socketService.createGame (connexion OK)', {
+        game_code: nextjsGame.code,
+        host_id: currentUser.id,
+        host_name: currentUser.name,
+        host_email: currentUser.email || '',
+        host_avatar: currentUser.avatar,
+        host_first_name: currentUser.firstName,
+        host_last_name: currentUser.lastName,
+        host_elo: currentUser.elo,
+        table_id: selectedTable,
+        table_name: selectedTableDetails.name,
+        game_mode: gameMode,
+        win_condition: winCondition,
+        win_value: winValue,
+        max_goals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
+      });
       const selectedTableDetails = tables.find(t => t.id === selectedTable);
       if (!selectedTableDetails) {
         console.error('Table introuvable');
