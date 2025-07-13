@@ -1072,6 +1072,21 @@ def handle_join_game(data):
                             'players': [],
                             'max_players': 2 if game['gameMode'] == '1v1' else 4
                         }
+                        # PATCH: Ajouter l'hôte comme joueur
+                        host_player = {
+                            'user_id': game['host']['id'],
+                            'user_name': game['host']['name'],
+                            'user_avatar': game['host'].get('avatar', ''),
+                            'user_first_name': game['host'].get('firstName', ''),
+                            'user_last_name': game['host'].get('lastName', ''),
+                            'user_elo': game['host'].get('elo', 0),
+                            'team': 'RED',
+                            'position': 'PLAYER',
+                            'is_guest': False,
+                            'is_host': True
+                        }
+                        active_games[game_code]['players'].append(host_player)
+                        print(f'✅ Hôte ajouté à la partie rechargée {game_code}')
                         print(f"✅ Partie {game_code} rechargée depuis Next.js et ajoutée à active_games.")
                     else:
                         emit('game_joined', {'status': 'error', 'message': 'Partie introuvable'})
