@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
         score: true,
         avatar: true,
         elo: true,
+        xp: true, // Ajouté
+        coins: true, // Ajouté
         jerseyNumber: true,
         skillLevel: true,
         position: true,
@@ -66,7 +68,9 @@ export async function POST(request: NextRequest) {
       lastName: user.lastName,
       score: user.score,
       avatar: avatar,
-      elo: user.elo || 0,
+      elo: user.elo ?? 0,
+      xp: user.xp ?? 0, // Ajouté
+      coins: user.coins ?? 0, // Ajouté
       jerseyNumber: user.jerseyNumber,
       skillLevel: user.skillLevel,
       position: user.position,
