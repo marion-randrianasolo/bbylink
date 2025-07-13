@@ -488,12 +488,15 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
                   </div>
                   
                   <div className="space-y-4">
-                    <Button 
-                      onClick={handleNewGame}
-                      className="w-full bg-[#EA1846] hover:bg-[#d41539] text-white py-4 text-lg font-nubernext-extended-bold"
-                    >
-                      Nouvelle partie
-                    </Button>
+                    {/* Afficher le bouton "Nouvelle partie" seulement pour l'hôte */}
+                    {user?.id === gameData.host.id && (
+                      <Button 
+                        onClick={handleNewGame}
+                        className="w-full bg-[#EA1846] hover:bg-[#d41539] text-white py-4 text-lg font-nubernext-extended-bold"
+                      >
+                        Nouvelle partie
+                      </Button>
+                    )}
                     <Button 
                       onClick={onLeaveGame}
                       variant="outline"

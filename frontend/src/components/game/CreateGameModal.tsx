@@ -108,6 +108,12 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
       if (!socketService.isConnected()) {
         await socketService.connect();
       }
+      const selectedTableDetails = tables.find(t => t.id === selectedTable);
+      if (!selectedTableDetails) {
+        console.error('Table introuvable');
+        setIsLoading(false);
+        return;
+      }
       console.log('DEBUG: Appel à socketService.createGame (connexion OK)', {
         game_code: nextjsGame.code,
         host_id: currentUser.id,
@@ -124,12 +130,6 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
         win_value: winValue,
         max_goals: winCondition === 'time_limit' ? (maxGoals || undefined) : undefined,
       });
-      const selectedTableDetails = tables.find(t => t.id === selectedTable);
-      if (!selectedTableDetails) {
-        console.error('Table introuvable');
-        setIsLoading(false);
-        return;
-      }
       socketService.createGame({
         game_code: nextjsGame.code,
         host_id: currentUser.id,
@@ -149,6 +149,7 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
       console.log('🎮 Partie transmise à Flask/Socket.IO');
 
       // Callback et reset
+      setIsLoading(false);
       onGameCreated(nextjsGame);
       onClose();
       resetForm();
