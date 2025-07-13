@@ -87,7 +87,7 @@ active_games = {}  # game_code -> game_data
 user_connections = {}  # socket_id -> user_info
 
 # Configuration pour communiquer avec l'API Next.js
-NEXTJS_API_BASE = 'http://172.20.10.12:3000/api'
+NEXTJS_API_BASE = 'https://bbylink.vercel.app/api'
 
 # User data storage for avatars and ELO - SYSTÈME REFAIT COMPLET
 user_data_cache = {}
@@ -1043,35 +1043,47 @@ def handle_create_game(data):
 
 @socketio.on('join_game')
 def handle_join_game(data):
-    """Rejoindre une partie existante"""
     try:
-        # Debug : voir ce qui est reçu
         print(f"📥 JOIN_GAME reçu: {data}")
-        
         game_code = data.get('game_code')
-        
+        # PATCH: Si la partie n'existe pas, tenter de la recharger depuis Next.js
         if game_code not in active_games:
-            emit('game_joined', {
-                'status': 'error',
-                'message': 'Partie introuvable'
-            })
-            return
-        
-        game_data = active_games[game_code]
-        
-        if game_data['status'] != 'waiting':
-            emit('game_joined', {
-                'status': 'error',
-                'message': 'Cette partie a déjà commencé'
-            })
-            return
-        
-        if len(game_data['players']) >= game_data['max_players']:
-            emit('game_joined', {
-                'status': 'error',
-                'message': 'Partie complète'
-            })
-            return
+            print(f"🔄 Partie {game_code} absente de la mémoire Flask, tentative de reload depuis Next.js...")
+            try:
+                resp = requests.get(f"{NEXTJS_API_BASE}/games/{game_code}")
+                if resp.ok:
+                    game = resp.json().get('game')
+                    if game:
+                        # Adapter le format pour active_games
+                        active_games[game_code] = {
+                            'code': game['code'],
+                            'status': game['status'],
+                            'host_id': game['host']['id'],
+                            'host_name': game['host']['name'],
+                            'table_id': game['table']['id'],
+                            'table_name': game['table']['name'],
+                            'game_mode': game['gameMode'],
+                            'win_condition': game['winCondition'],
+                            'win_value': game['winValue'],
+                            'max_goals': game.get('maxGoals'),
+                            'currentScoreLeft': 0,
+                            'currentScoreRight': 0,
+                            'created_at': time.time(),
+                            'players': [],
+                            'max_players': 2 if game['gameMode'] == '1v1' else 4
+                        }
+                        print(f"✅ Partie {game_code} rechargée depuis Next.js et ajoutée à active_games.")
+                    else:
+                        emit('game_joined', {'status': 'error', 'message': 'Partie introuvable'})
+                        return
+                else:
+                    emit('game_joined', {'status': 'error', 'message': 'Partie introuvable'})
+                    return
+            except Exception as e:
+                print(f"❌ Erreur lors du reload depuis Next.js: {e}")
+                emit('game_joined', {'status': 'error', 'message': 'Partie introuvable'})
+                return
+        # ... existing code for join_game ...
         
         # Déterminer l'équipe et la position
         team = 'BLUE' if len([p for p in game_data['players'] if p['team'] == 'RED']) >= (game_data['max_players'] // 2) else 'RED'
