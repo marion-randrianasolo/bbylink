@@ -1077,7 +1077,7 @@ def set_table_availability(table_id):
 
 # --- ADMIN HTML: gestion des tables ---
 # Ajoute dans la page /admin une section pour gérer la disponibilité des tables
-from flask import Markup
+from markupsafe import Markup
 
 def render_tables_admin_section():
     return Markup('''
