@@ -108,6 +108,14 @@ async function testDynamicScenario({ label, hostId, joinId, winner: winnerLabel 
   const data = await res.json();
   console.log('Réponse API:', data);
 
+  // Lire la structure réelle des joueurs après finish
+  const gameStateAfter = await getGameState(code);
+  const playersAfter = gameStateAfter.players.map(p => ({
+    id: p.userId || (p.user && p.user.id),
+    team: p.team
+  }));
+  console.log('Joueurs/équipes dans la partie après finish:', playersAfter);
+
   // Stats après
   const statsAfterHost = await getUserStats(hostId);
   const statsAfterJoin = await getUserStats(joinId);
@@ -124,6 +132,29 @@ async function testDynamicScenario({ label, hostId, joinId, winner: winnerLabel 
     elo: statsAfterJoin.elo - statsBeforeJoin.elo
   });
 }
+
+// === AUDIT D'UNE PARTIE EXISTANTE ===
+async function auditGameByCode(gameCode, userIds) {
+  console.log(`\n=== AUDIT PARTIE ${gameCode} ===`);
+  const game = await getGameState(gameCode);
+  if (!game) {
+    console.log('Partie introuvable');
+    return;
+  }
+  const players = game.players.map(p => ({
+    id: p.userId || (p.user && p.user.id),
+    team: p.team
+  }));
+  console.log('Joueurs/équipes dans la partie:', players);
+  for (const userId of userIds) {
+    const stats = await getUserStats(userId);
+    console.log(`Stats user ${userId}:`, stats);
+  }
+}
+
+// === EXEMPLE D'UTILISATION ===
+// Décommente et remplace le code/ids pour auditer une partie réelle
+ await auditGameByCode('9461', [13, 14]);
 
 (async () => {
   // 1. Victoire du host (peu importe qui est RED/BLUE)
