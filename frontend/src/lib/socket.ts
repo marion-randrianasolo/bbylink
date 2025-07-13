@@ -336,6 +336,24 @@ class SocketService {
   }
 
   /**
+   * Listen to a custom event
+   */
+  on(event: string, handler: (...args: any[]) => void): void {
+    if (this.socket) {
+      this.socket.on(event, handler)
+    }
+  }
+
+  /**
+   * Remove a custom event listener
+   */
+  off(event: string, handler: (...args: any[]) => void): void {
+    if (this.socket) {
+      this.socket.off(event, handler)
+    }
+  }
+
+  /**
    * Get the raw socket instance (for advanced usage)
    */
   getSocket(): Socket | null {

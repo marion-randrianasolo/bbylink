@@ -51,6 +51,14 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
   useEffect(() => {
     if (isOpen) {
       fetchTables()
+      // --- Synchro temps réel ---
+      const handleTablesUpdate = () => {
+        fetchTables()
+      }
+      socketService.on('tables_update', handleTablesUpdate)
+      return () => {
+        socketService.off('tables_update', handleTablesUpdate)
+      }
     }
   }, [isOpen])
 
@@ -63,7 +71,8 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
         setTables(data.tables)
         // Sélectionner automatiquement la première table disponible
         if (data.tables.length > 0) {
-          setSelectedTable(data.tables[0].id)
+          const firstAvailable = data.tables.find((t: Table) => t.isAvailable)
+          setSelectedTable(firstAvailable ? firstAvailable.id : null)
         }
       }
     } catch (error) {
@@ -201,11 +210,13 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
                 <Card 
                   key={table.id}
                   className={`cursor-pointer transition-all duration-200 ${
+                    !table.isAvailable ? 'opacity-50 pointer-events-none' : ''
+                  } ${
                     selectedTable === table.id 
                       ? 'border-[#EA1846] bg-[#EA1846]/10' 
                       : 'border-[#333] bg-[#0C0E14] hover:border-[#555]'
                   }`}
-                  onClick={() => setSelectedTable(table.id)}
+                  onClick={() => table.isAvailable && setSelectedTable(table.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -216,6 +227,9 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
                         <p className="text-[#AAAAAA] text-xs">
                           {table.location}
                         </p>
+                        {!table.isAvailable && (
+                          <span className="text-red-500 text-xs font-bold">Occupée</span>
+                        )}
                       </div>
                       <div className={`w-3 h-3 rounded-full ${
                         table.isAvailable ? 'bg-green-500' : 'bg-red-500'

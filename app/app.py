@@ -1026,6 +1026,106 @@ def check_game_end(game_code, game_data):
                 }
             }, room=f"game_{game_code}")
 
+# --- GESTION DES TABLES (disponibilité) ---
+import threading
+
+table_availability = {}  # {table_id: is_available}
+NEXTJS_API_BASE = 'https://bbylink.vercel.app/api'
+
+def fetch_tables_from_nextjs():
+    try:
+        resp = requests.get(f"{NEXTJS_API_BASE}/tables")
+        if resp.ok:
+            data = resp.json()
+            return data.get('tables', [])
+        else:
+            print(f"❌ Erreur récupération tables Next.js: {resp.status_code}")
+            return []
+    except Exception as e:
+        print(f"❌ Exception récupération tables Next.js: {e}")
+        return []
+
+@app.route('/api/tables', methods=['GET'])
+def get_tables():
+    tables = fetch_tables_from_nextjs()
+    # Fusionne avec l'état local de disponibilité
+    for t in tables:
+        t_id = t.get('id')
+        t['is_available'] = table_availability.get(t_id, True)
+    return jsonify({'tables': tables})
+
+@app.route('/api/tables/<int:table_id>/set-availability', methods=['POST'])
+def set_table_availability(table_id):
+    data = request.get_json() or {}
+    is_available = data.get('is_available')
+    if not isinstance(is_available, bool):
+        return jsonify({'success': False, 'error': 'Paramètre is_available manquant ou invalide'}), 400
+    # Appel PATCH à Next.js pour mettre à jour la BDD Neon
+    try:
+        resp = requests.patch(f"{NEXTJS_API_BASE}/tables/{table_id}", json={"isAvailable": is_available}, timeout=5)
+        if resp.ok:
+            table = resp.json().get('table')
+            # --- Synchro temps réel ---
+            socketio.emit('tables_update')
+            return jsonify({'success': True, 'table_id': table_id, 'is_available': is_available, 'table': table})
+        else:
+            print(f"❌ Erreur PATCH Next.js: {resp.status_code} {resp.text}")
+            return jsonify({'success': False, 'error': 'Erreur Next.js', 'details': resp.text}), 500
+    except Exception as e:
+        print(f"❌ Exception PATCH Next.js: {e}")
+        return jsonify({'success': False, 'error': 'Exception Next.js', 'details': str(e)}), 500
+
+# --- ADMIN HTML: gestion des tables ---
+# Ajoute dans la page /admin une section pour gérer la disponibilité des tables
+from flask import Markup
+
+def render_tables_admin_section():
+    return Markup('''
+    <div class="section">
+        <h2>🛠️ Gestion des tables</h2>
+        <div id="tablesList"></div>
+    </div>
+    <script>
+    function refreshTables() {
+      fetch('/api/tables')
+        .then(r => r.json())
+        .then(data => {
+          const container = document.getElementById('tablesList');
+          container.innerHTML = data.tables.map(table => `
+            <div style="margin-bottom:8px;">
+              <strong> ${table.name}</strong>
+              <span style="color:${table.is_available ? 'green' : 'red'};font-weight:bold;">
+                ${table.is_available ? 'Disponible' : 'Occupée'}
+              </span>
+              <button onclick="setTable(${table.id}, true)">Dispo</button>
+              <button onclick="setTable(${table.id}, false)">Occupée</button>
+            </div>
+          `).join('');
+        });
+    }
+    function setTable(id, dispo) {
+      fetch(`/api/tables/${id}/set-availability`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({is_available: dispo})
+      }).then(refreshTables);
+    }
+    refreshTables();
+    </script>
+    ''')
+
+# Patch la route /admin pour inclure la section tables
+old_admin_page = admin_page
+
+def admin_page_patched():
+    html = old_admin_page()
+    # Ajoute la section tables juste avant </body>
+    if '</body>' in html:
+        html = html.replace('</body>', render_tables_admin_section() + '</body>')
+    return html
+
+app.view_functions['admin_page'] = admin_page_patched
+
 # === ÉVÉNEMENTS SOCKET.IO ===
 
 @socketio.on('connect')
