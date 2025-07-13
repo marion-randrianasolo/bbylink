@@ -531,7 +531,7 @@ def simulate_game_goal():
     if game_data['status'] != 'playing':
         return jsonify({'status': 'error', 'message': 'Partie non active'}), 400
     
-    # Augmenter le score selon l'équipe
+    # Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
     if team == 'RED':
         game_data['currentScoreLeft'] += 1
         score['GAUCHE'] += 1  # Sync avec le score Arduino
@@ -807,14 +807,14 @@ def handle_game_by_code(game_code):
         })
 
 # Fonction d'envoi des scores en temps réel (conservée pour l'Arduino)
-# Mapping explicite : GAUCHE = BLUE, DROITE = RED
+# Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
 # Lors de l'émission des scores, toujours documenter ce mapping
 
 def emit_score():
-    # Mapping explicite : GAUCHE = BLUE, DROITE = RED
+    # Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
     socketio.emit('score_update', {
-        'left': score['GAUCHE'],   # BLUE
-        'right': score['DROITE']   # RED
+        'left': score['GAUCHE'],   # RED
+        'right': score['DROITE']   # BLUE
     })
 
 # Fonction pour générer un code de partie unique
@@ -867,6 +867,7 @@ def update_active_game_score(side):
     """Met à jour le score d'une partie active quand l'Arduino envoie un signal"""
     for game_code, game_data in active_games.items():
         if game_data['status'] == 'playing':
+            # Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
             if side == 'GAUCHE':
                 game_data['currentScoreLeft'] += 1
             elif side == 'DROITE':
@@ -897,7 +898,7 @@ def check_game_end(game_code, game_data):
         if score_left >= target or score_right >= target:
             game_data['status'] = 'finished'
             game_data['finishedAt'] = time.time()
-            # Mapping explicite : GAUCHE = RED, DROITE = BLUE
+            # Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
             if score_left > score_right:
                 winner_team = 'RED'
             else:
