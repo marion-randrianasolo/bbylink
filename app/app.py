@@ -961,7 +961,7 @@ def handle_join_user_session(data):
 def handle_create_game(data):
     """Crée une nouvelle partie"""
     try:
-        game_code = generate_game_code()
+        game_code = data.get('game_code') or generate_game_code()  # Utilise le code transmis par le frontend si présent
         host_id = data.get('host_id')
         
         # Stocker les données de l'hôte - UTILISER L'AVATAR FRONTEND (comme PlayerXPIndicator)
