@@ -57,6 +57,9 @@ model Game {
   scoreLeft   Int      @default(0)
   scoreRight  Int      @default(0)
   maxScore    Int      @default(10)
+  winCondition String  @default("first_to_goals") // first_to_goals, time_limit
+  winValue    Int      @default(10)
+  maxGoals    Int?     // null = illimité
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   startedAt   DateTime?
