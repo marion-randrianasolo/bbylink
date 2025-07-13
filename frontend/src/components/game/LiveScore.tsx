@@ -115,10 +115,12 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
             
             setScore(scoreData)
             
-            // Vérifier la victoire
-            if (scoreData.left >= WIN_SCORE || scoreData.right >= WIN_SCORE) {
-              const winnerName = scoreData.left >= WIN_SCORE ? leftPlayerName : rightPlayerName
-              handleGameEnd(winnerName)
+            // Vérifier la victoire (victoire claire uniquement)
+            if (
+              (scoreData.left >= WIN_SCORE && scoreData.left > scoreData.right) ||
+              (scoreData.right >= WIN_SCORE && scoreData.right > scoreData.left)
+            ) {
+              handleGameEnd(scoreData.left, scoreData.right);
             }
           },
           onGameEnded: (gameData) => {
@@ -163,13 +165,13 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
   /**
    * Gestion de la fin de partie avec célébrations + appel API
    */
-  const handleGameEnd = async (winnerName: string) => {
-    setGameOver(true)
-    setWinner(winnerName)
+  const handleGameEnd = async (leftScore: number, rightScore: number) => {
+    setGameOver(true);
+    setWinner(leftScore > rightScore ? leftPlayerName : rightPlayerName);
     
     // Son de victoire
     if (winSoundRef.current) {
-      winSoundRef.current.play().catch(console.error)
+      winSoundRef.current.play().catch(console.error);
     }
     
     // Confettis
@@ -178,7 +180,7 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
         particleCount: 200,
         spread: 70,
         origin: { y: 0.5 }
-      })
+      });
     }
     
     // Appel API pour finir la partie et récompenser
@@ -187,8 +189,8 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
         console.log('[API] Fin de partie : appel /api/games/' + gameData.code, {
           action: 'finish',
           userId: user.id,
-          leftScore: score.left,
-          rightScore: score.right
+          leftScore,
+          rightScore
         });
         const res = await fetch(`/api/games/${gameData.code}`, {
           method: 'POST',
@@ -196,8 +198,8 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
           body: JSON.stringify({
             action: 'finish',
             userId: user.id,
-            leftScore: score.left,
-            rightScore: score.right
+            leftScore,
+            rightScore
           })
         });
         if (res.ok) {
