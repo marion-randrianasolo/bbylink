@@ -184,7 +184,12 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
     try {
       const winnerTeam = score.left >= WIN_SCORE ? 'RED' : 'BLUE';
       if (user) {
-        await fetch(`/api/games/${gameData.code}`, {
+        console.log('[API] Fin de partie : appel /api/games/' + gameData.code, {
+          action: 'finish',
+          userId: user.id,
+          winnerTeam
+        });
+        const res = await fetch(`/api/games/${gameData.code}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -193,6 +198,12 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
             winnerTeam
           })
         });
+        if (res.ok) {
+          console.log('[API] Succès persistance elo/xp/coins');
+        } else {
+          const data = await res.json();
+          console.error('[API] Erreur persistance elo/xp/coins:', data.error);
+        }
       }
     } catch (err) {
       console.error('Erreur API fin de partie:', err);
