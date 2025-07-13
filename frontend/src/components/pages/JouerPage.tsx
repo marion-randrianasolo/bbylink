@@ -126,6 +126,7 @@ export default function JouerPage() {
   }
 
   const resetCreateForm = () => {
+    setIsLoading(false); // Ajouté pour éviter le bouton grisé
     setSelectedTable(null)
     setGameMode('1v1')
     setWinCondition('first_to_goals')
