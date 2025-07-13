@@ -1109,10 +1109,7 @@ def fetch_tables_from_nextjs():
 @app.route('/api/tables', methods=['GET'])
 def get_tables():
     tables = fetch_tables_from_nextjs()
-    # Fusionne avec l'état local de disponibilité
-    for t in tables:
-        t_id = t.get('id')
-        t['is_available'] = table_availability.get(t_id, True)
+    # Utilise la valeur de la BDD, ne surcharge plus avec table_availability
     return jsonify({'tables': tables})
 
 @app.route('/api/tables/<int:table_id>/set-availability', methods=['POST'])
