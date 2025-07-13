@@ -182,8 +182,18 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
     
     // Appel API pour finir la partie et récompenser
     try {
-      const winnerTeam = score.left >= WIN_SCORE ? 'RED' : 'BLUE';
-      if (user) {
+      // Correction : détection dynamique de l'équipe gagnante
+      const myTeam = gameData.players.find(p => p.user?.id === user?.id)?.team;
+      let winnerTeam: 'RED' | 'BLUE' | undefined = undefined;
+      if (score.left >= WIN_SCORE && leftTeam.length > 0) {
+        winnerTeam = 'RED';
+      } else if (score.right >= WIN_SCORE && rightTeam.length > 0) {
+        winnerTeam = 'BLUE';
+      } else {
+        // Fallback: équipe adverse
+        winnerTeam = myTeam === 'RED' ? 'BLUE' : 'RED';
+      }
+      if (user && winnerTeam) {
         console.log('[API] Fin de partie : appel /api/games/' + gameData.code, {
           action: 'finish',
           userId: user.id,
