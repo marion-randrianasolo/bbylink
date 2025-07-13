@@ -1098,7 +1098,8 @@ def handle_join_game(data):
                 print(f"❌ Erreur lors du reload depuis Next.js: {e}")
                 emit('game_joined', {'status': 'error', 'message': 'Partie introuvable'})
                 return
-        # ... existing code for join_game ...
+        # Toujours définir game_data après le patch de reload
+        game_data = active_games[game_code]
         
         # Déterminer l'équipe et la position
         team = 'BLUE' if len([p for p in game_data['players'] if p['team'] == 'RED']) >= (game_data['max_players'] // 2) else 'RED'
