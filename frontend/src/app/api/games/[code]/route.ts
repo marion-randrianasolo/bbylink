@@ -435,11 +435,13 @@ async function handleFinishGame(game: any, userId: number, winnerTeam: string) {
   const xpLose = 20;
 
   for (const p of game.players) {
-    if (!p.userId) continue; // skip guests
+    // Compatibilité : userId direct ou via jointure user
+    const userId = p.userId || p.user?.id;
+    if (!userId) continue; // skip guests or invalid
     const isWinner = p.team === winnerTeam;
 
     // Récupérer l'elo actuel pour éviter de descendre sous 0
-    const user = await prisma.user.findUnique({ where: { id: p.userId }, select: { elo: true } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { elo: true } });
     let newElo = user?.elo ?? 0;
     if (isWinner) {
       newElo += eloDelta;
@@ -448,7 +450,7 @@ async function handleFinishGame(game: any, userId: number, winnerTeam: string) {
     }
 
     await prisma.user.update({
-      where: { id: p.userId },
+      where: { id: userId },
       data: {
         elo: newElo,
         coins: { increment: isWinner ? coinsDelta : 0 },
