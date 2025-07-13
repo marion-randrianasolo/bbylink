@@ -12,7 +12,6 @@ interface User {
   name: string
   firstName?: string
   lastName?: string
-  score: number
   avatar?: string
   jerseyNumber?: number
   skillLevel?: string

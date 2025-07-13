@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         jerseyNumber,
         skillLevel,
         position,
-        score: 0,
+        // score: 0, // supprimé
         // Valeurs par défaut BabyLink
         coins: 100,     // Nouveau joueur commence avec 100 coins
         xp: 0,     // Nouveau joueur commence avec 0 XP
@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
         name: true,
         firstName: true,
         lastName: true,
-        score: true,
         avatar: true,
         jerseyNumber: true,
         skillLevel: true,

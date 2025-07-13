@@ -27,7 +27,6 @@ interface LeaderboardPlayer {
   email: string
   avatar?: string
   elo: number
-  score: number
   xp: number
   coins: number
   jerseyNumber?: number

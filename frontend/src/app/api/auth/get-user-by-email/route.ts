@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
         firstName: true,
         lastName: true,
         elo: true,
-        score: true,
         xp: true,
         coins: true,
         jerseyNumber: true,

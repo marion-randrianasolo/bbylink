@@ -21,7 +21,6 @@ export async function GET() {
         email: true,
         avatar: true,
         elo: true,
-        score: true,
         xp: true,
         coins: true,
         jerseyNumber: true,

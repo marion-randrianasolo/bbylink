@@ -15,7 +15,6 @@ model User {
   email     String   @unique
   name      String
   password  String   // SHA256 hash
-  score     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -27,9 +26,9 @@ model User {
   skillLevel   String?
   position     String?
   championship String?
-  xp           Int      @default(1250)  // Valeur par défaut 1250 XP
-  coins        Int      @default(0)     // Valeur par défaut 0 coins
-  elo          Int      @default(1000)  // Valeur par défaut 1000 ELO
+  xp           Int?     @default(0)  // Valeur par défaut 1250 XP
+  coins        Int?     @default(100)     // Valeur par défaut 0 coins
+  elo          Int?     @default(100)  // Valeur par défaut 1000 ELO
 
   // Relations
   hostedGames Game[]       @relation("GameHost")

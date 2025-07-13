@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
         firstName: true,
         lastName: true,
         password: true,
-        score: true,
         avatar: true,
         elo: true,
         xp: true, // Ajouté
@@ -66,7 +65,6 @@ export async function POST(request: NextRequest) {
       name: user.name,
       firstName: user.firstName,
       lastName: user.lastName,
-      score: user.score,
       avatar: avatar,
       elo: user.elo ?? 0,
       xp: user.xp ?? 0, // Ajouté

@@ -34,11 +34,11 @@ export async function GET(
         lastName: true,
         avatar: true,
         elo: true,
-        skillLevel: true,
-        position: true,
-        score: true,
         xp: true,
         coins: true,
+        skillLevel: true,
+        position: true,
+        championship: true,
         createdAt: true,
       }
     })

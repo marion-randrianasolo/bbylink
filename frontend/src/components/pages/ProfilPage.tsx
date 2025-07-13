@@ -117,12 +117,6 @@ export default function ProfilPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-nubernext-extended-bold text-[#EA1846] mb-1">
-                    {user.score ?? 0}
-                  </div>
-                  <div className="text-sm text-[#AAAAAA]">Score</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-nubernext-extended-bold text-[#EA1846] mb-1">
                     {user.xp ?? 0}
                   </div>
                   <div className="text-sm text-[#AAAAAA]">Expérience</div>
