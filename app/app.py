@@ -571,6 +571,57 @@ def reset_via_http():
     emit_score()
     return '', 204  # No Content
 
+# Nouvelle route pour resetter le score lors d'une nouvelle partie
+@app.route('/api/games/<string:game_code>/reset-score', methods=['POST'])
+def reset_game_score(game_code):
+    """Reset le score Arduino pour une nouvelle partie"""
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        
+        if game_code not in active_games:
+            return jsonify({'error': 'Partie introuvable'}), 404
+        
+        game_data = active_games[game_code]
+        
+        # Vérifier que c'est l'hôte qui reset
+        if game_data['host_id'] != user_id:
+            return jsonify({'error': 'Seul l\'hôte peut resetter le score'}), 403
+        
+        # Reset du score Arduino global
+        score['GAUCHE'] = 0
+        score['DROITE'] = 0
+        
+        # Reset du score de la partie
+        game_data['currentScoreLeft'] = 0
+        game_data['currentScoreRight'] = 0
+        
+        # Émettre le score reseté
+        emit_score()
+        
+        # Notifier tous les clients de la partie
+        socketio.emit('live_score_update', {
+            'game_code': game_code,
+            'scoreLeft': 0,
+            'scoreRight': 0,
+            'status': game_data['status']
+        }, room=f"game_{game_code}")
+        
+        print(f"🔄 Score reseté pour la partie {game_code} par l'hôte {user_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Score reseté avec succès',
+            'score': {
+                'left': 0,
+                'right': 0
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors du reset du score: {e}")
+        return jsonify({'error': 'Erreur interne du serveur'}), 500
+
 # API pour obtenir l'état des parties actives
 @app.route('/api/games', methods=['GET'])
 def get_active_games():
@@ -867,11 +918,23 @@ def update_active_game_score(side):
     """Met à jour le score d'une partie active quand l'Arduino envoie un signal"""
     for game_code, game_data in active_games.items():
         if game_data['status'] == 'playing':
+            # Vérifier si la partie est déjà terminée (score max atteint)
+            score_left = game_data['currentScoreLeft']
+            score_right = game_data['currentScoreRight']
+            win_value = game_data['win_value']
+            
+            # Empêcher les buts si un joueur a déjà atteint la winValue
+            if score_left >= win_value or score_right >= win_value:
+                print(f"🚫 But ignoré pour {game_code} - Score max déjà atteint ({score_left}-{score_right})")
+                return
+            
             # Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
             if side == 'GAUCHE':
                 game_data['currentScoreLeft'] += 1
+                print(f"⚽ But GAUCHE pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
             elif side == 'DROITE':
                 game_data['currentScoreRight'] += 1
+                print(f"⚽ But DROITE pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
             
             # Vérifier si la partie est terminée
             check_game_end(game_code, game_data)
