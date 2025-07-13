@@ -355,6 +355,66 @@ def store_user_data_api():
     })
 
 # PAGE D'ADMINISTRATION (nouveau)
+# --- ADMIN HTML: gestion des tables ---
+from markupsafe import Markup
+
+def render_tables_admin_section():
+    return Markup('''
+    <div class="section">
+        <h2>🛠️ Gestion des tables</h2>
+        <div id="tablesList"></div>
+    </div>
+    <script>
+    let updatingTable = null;
+    function refreshTables() {
+      fetch('/api/tables')
+        .then(r => r.json())
+        .then(data => {
+          const container = document.getElementById('tablesList');
+          container.innerHTML = data.tables.map(table => `
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+              <strong>${table.name}</strong>
+              <span style="font-weight:bold;color:${table.is_available ? 'green' : 'red'};">
+                ${table.is_available ? 'Disponible' : 'Occupée'}
+              </span>
+              ${updatingTable === table.id ? '<span style=\"color:#FFD700;\">⏳</span>' : ''}
+              <button
+                onclick="setTable(${table.id}, true)"
+                style="background:${table.is_available ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
+                ${table.is_available ? 'disabled' : ''}
+                ${updatingTable === table.id ? 'disabled' : ''}
+              >Dispo${table.is_available ? ' ✓' : ''}</button>
+              <button
+                onclick="setTable(${table.id}, false)"
+                style="background:${!table.is_available ? '#e74c3c' : '#EA1846'};color:white;font-weight:bold;"
+                ${!table.is_available ? 'disabled' : ''}
+                ${updatingTable === table.id ? 'disabled' : ''}
+              >Occupée${!table.is_available ? ' ✓' : ''}</button>
+            </div>
+          `).join('');
+        });
+    }
+    function setTable(id, dispo) {
+      updatingTable = id;
+      refreshTables();
+      fetch(`/api/tables/${id}/set-availability`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({is_available: dispo})
+      }).then(() => {
+        updatingTable = null;
+        refreshTables();
+      });
+    }
+    refreshTables();
+    // Synchro temps réel via Socket.IO
+    if (typeof io !== 'undefined') {
+      const socket = io();
+      socket.on('tables_update', refreshTables);
+    }
+    </script>
+    ''')
+
 @app.route('/admin')
 def admin_page():
     """Page d'administration pour contrôler manuellement les événements"""
@@ -395,6 +455,8 @@ def admin_page():
                 <button onclick="resetScore()">🔄 Reset Score</button>
             </div>
 
+            {render_tables_admin_section()}
+
             <div class="section">
                 <h2>🎯 Simulation Partie En Cours</h2>
                 <p>Sélectionnez une partie active et simulez des goals pour cette partie :</p>
@@ -411,7 +473,6 @@ def admin_page():
                 <div id="gamesList" class="games"></div>
             </div>
         </div>
-
         <script>
             const socket = io();
             
@@ -433,7 +494,7 @@ def admin_page():
             function simulateGameGoal(team) {{
                 const gameCode = document.getElementById('gameSelect').value;
                 if (!gameCode) {{
-                    alert('Sélectionnez une partie d\\'abord');
+                    alert('Sélectionnez une partie d\'abord');
                     return;
                 }}
                 
@@ -1074,57 +1135,6 @@ def set_table_availability(table_id):
     except Exception as e:
         print(f"❌ Exception PATCH Next.js: {e}")
         return jsonify({'success': False, 'error': 'Exception Next.js', 'details': str(e)}), 500
-
-# --- ADMIN HTML: gestion des tables ---
-# Ajoute dans la page /admin une section pour gérer la disponibilité des tables
-from markupsafe import Markup
-
-def render_tables_admin_section():
-    return Markup('''
-    <div class="section">
-        <h2>🛠️ Gestion des tables</h2>
-        <div id="tablesList"></div>
-    </div>
-    <script>
-    function refreshTables() {
-      fetch('/api/tables')
-        .then(r => r.json())
-        .then(data => {
-          const container = document.getElementById('tablesList');
-          container.innerHTML = data.tables.map(table => `
-            <div style="margin-bottom:8px;">
-              <strong> ${table.name}</strong>
-              <span style="color:${table.is_available ? 'green' : 'red'};font-weight:bold;">
-                ${table.is_available ? 'Disponible' : 'Occupée'}
-              </span>
-              <button onclick="setTable(${table.id}, true)">Dispo</button>
-              <button onclick="setTable(${table.id}, false)">Occupée</button>
-            </div>
-          `).join('');
-        });
-    }
-    function setTable(id, dispo) {
-      fetch(`/api/tables/${id}/set-availability`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({is_available: dispo})
-      }).then(refreshTables);
-    }
-    refreshTables();
-    </script>
-    ''')
-
-# Patch la route /admin pour inclure la section tables
-old_admin_page = admin_page
-
-def admin_page_patched():
-    html = old_admin_page()
-    # Ajoute la section tables juste avant </body>
-    if '</body>' in html:
-        html = html.replace('</body>', render_tables_admin_section() + '</body>')
-    return html
-
-app.view_functions['admin_page'] = admin_page_patched
 
 # === ÉVÉNEMENTS SOCKET.IO ===
 
