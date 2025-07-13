@@ -77,8 +77,8 @@ model Game {
 
 model GamePlayer {
   id        Int     @id @default(autoincrement())
-  team      String  // "left", "right"
-  position  String? // "defense", "attack" for 2v2
+  team      String  // "RED", "BLUE"
+  position  String? // "ATTACKER", "DEFENDER" for 2v2
   isGuest   Boolean @default(false)
   guestName String?
   

@@ -166,7 +166,7 @@ async function main() {
     data: {
       gameId: game1.id,
       userId: createdUsers[0].id, // Messi
-      team: 'left',
+      team: 'RED',
     },
   })
 
@@ -174,7 +174,7 @@ async function main() {
     data: {
       gameId: game1.id,
       userId: createdUsers[1].id, // Ronaldo
-      team: 'right',
+      team: 'BLUE',
     },
   })
 
@@ -198,7 +198,7 @@ async function main() {
     data: {
       gameId: game2.id,
       userId: createdUsers[2].id, // Neymar
-      team: 'left',
+      team: 'RED',
     },
   })
 
@@ -206,7 +206,7 @@ async function main() {
     data: {
       gameId: game2.id,
       userId: createdUsers[3].id, // Mbappé
-      team: 'right',
+      team: 'BLUE',
     },
   })
 
