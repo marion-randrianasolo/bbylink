@@ -143,6 +143,22 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
     setIsJoining(true)
     
     try {
+      // 1. Ajouter le joueur dans la BDD Next.js
+      const res = await fetch(`/api/games/${gameData.code}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'join',
+          userId: user.id,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Erreur lors de la jointure (BDD)');
+        setIsJoining(false);
+        return;
+      }
+
       // SYSTÈME SIMPLIFIÉ: Utiliser directement l'avatar de la base (comme PlayerXPIndicator)
       console.log('🎭 Utilisation avatar direct depuis base de données pour join...')
       const currentUser = {
