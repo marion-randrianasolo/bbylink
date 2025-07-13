@@ -93,7 +93,8 @@ export async function POST(
 ) {
   try {
     const { code } = await params
-    const { action, userId, guestName, position } = await request.json()
+    const body = await request.json() // LIRE UNE SEULE FOIS
+    const { action, userId, guestName, position, winnerTeam } = body
 
     if (!action) {
       return NextResponse.json(
@@ -131,7 +132,7 @@ export async function POST(
         return handleLeaveGame(game, userId)
       
       case 'finish':
-        return handleFinishGame(game, userId, request)
+        return handleFinishGame(game, userId, winnerTeam)
       
       default:
         return NextResponse.json(
@@ -420,10 +421,7 @@ async function handleLeaveGame(game: any, userId: number) {
 /**
  * Handle finishing a game and updating rewards
  */
-async function handleFinishGame(game: any, userId: number, request: NextRequest) {
-  // Récupère les infos du gagnant depuis le body
-  const { winnerTeam } = await request.json();
-
+async function handleFinishGame(game: any, userId: number, winnerTeam: string) {
   // Met à jour le statut de la partie
   await prisma.game.update({
     where: { id: game.id },
