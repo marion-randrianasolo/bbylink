@@ -185,14 +185,31 @@ export default function LiveScore({ gameData, onGameEnd, onLeaveGame }: LiveScor
       // Correction : détection dynamique de l'équipe gagnante
       const myTeam = gameData.players.find(p => p.user?.id === user?.id)?.team;
       let winnerTeam: 'RED' | 'BLUE' | undefined = undefined;
+      
+      console.log('🔍 Debug handleGameEnd:');
+      console.log('  - Score:', score);
+      console.log('  - WIN_SCORE:', WIN_SCORE);
+      console.log('  - leftTeam:', leftTeam);
+      console.log('  - rightTeam:', rightTeam);
+      console.log('  - myTeam:', myTeam);
+      console.log('  - gameData.players:', gameData.players.map(p => ({
+        userId: p.user?.id,
+        team: p.team,
+        name: p.user?.name || p.guestName
+      })));
+      
       if (score.left >= WIN_SCORE && leftTeam.length > 0) {
         winnerTeam = 'RED';
+        console.log('  ✅ Winner: RED (score.left >= WIN_SCORE)');
       } else if (score.right >= WIN_SCORE && rightTeam.length > 0) {
         winnerTeam = 'BLUE';
+        console.log('  ✅ Winner: BLUE (score.right >= WIN_SCORE)');
       } else {
         // Fallback: équipe adverse
         winnerTeam = myTeam === 'RED' ? 'BLUE' : 'RED';
+        console.log('  ⚠️ Fallback winner:', winnerTeam, '(myTeam:', myTeam, ')');
       }
+      
       if (user && winnerTeam) {
         console.log('[API] Fin de partie : appel /api/games/' + gameData.code, {
           action: 'finish',
