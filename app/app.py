@@ -555,6 +555,10 @@ def admin_page():
 # Utilitaire : savoir si le score max est atteint pour un côté
 
 def is_score_blocked(side):
+    # Si aucune partie active, bloquer toute incrémentation
+    any_playing = any(game_data['status'] == 'playing' for game_data in active_games.values())
+    if not any_playing:
+        return True
     for game_data in active_games.values():
         if game_data['status'] == 'playing':
             win_value = game_data['win_value']
@@ -582,9 +586,17 @@ def read_serial():
                     if line == "GAUCHE":
                         score["DROITE"] += 1
                         update_active_game_score("DROITE")
+                        # PATCH: Check fin de partie
+                        for game_code, game_data in active_games.items():
+                            if game_data['status'] == 'playing':
+                                check_game_end(game_code, game_data)
                     elif line == "DROITE":
                         score["GAUCHE"] += 1
                         update_active_game_score("GAUCHE")
+                        # PATCH: Check fin de partie
+                        for game_code, game_data in active_games.items():
+                            if game_data['status'] == 'playing':
+                                check_game_end(game_code, game_data)
                     emit_score()
                     update_active_game_score(line)
         except Exception as e:
@@ -602,6 +614,10 @@ def simulate_goal():
             return jsonify({'status': 'blocked', 'side': side, 'message': 'Score max déjà atteint'}), 403
         score[side] += 1
         emit_score()
+        # PATCH: Check fin de partie
+        for game_code, game_data in active_games.items():
+            if game_data['status'] == 'playing':
+                check_game_end(game_code, game_data)
         
         # Si une partie est en cours, mettre à jour le score de la partie
         if ARDUINO_FAKE_MODE:
@@ -693,8 +709,8 @@ def reset_game_score(game_code):
                             'table_id': game['table']['id'],
                             'table_name': game['table']['name'],
                             'game_mode': game['gameMode'],
-                            'win_condition': game['winCondition'],
-                            'win_value': game['winValue'],
+                            'winCondition': game['winCondition'],
+                            'winValue': game['winValue'],
                             'maxGoals': game.get('maxGoals'),
                             'currentScoreLeft': 0,
                             'currentScoreRight': 0,
@@ -1270,8 +1286,8 @@ def handle_join_game(data):
                             'table_id': game['table']['id'],
                             'table_name': game['table']['name'],
                             'game_mode': game['gameMode'],
-                            'win_condition': game['winCondition'],
-                            'win_value': game['winValue'],
+                            'winCondition': game['winCondition'],
+                            'winValue': game['winValue'],
                             'max_goals': game.get('maxGoals'),
                             'currentScoreLeft': 0,
                             'currentScoreRight': 0,
