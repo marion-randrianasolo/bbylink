@@ -456,19 +456,19 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
           )}
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-3 justify-center">
+        <DialogFooter className="flex flex-col gap-3 max-w-xs mx-auto w-full">
           <Button 
             variant="outline" 
             onClick={handleClose}
             disabled={isLoading || isJoining}
-            className="border-[#333] text-[#AAAAAA] hover:text-white hover:border-[#555] bg-transparent"
+            className="border-[#333] text-[#AAAAAA] hover:text-white hover:border-[#555] bg-transparent w-full"
           >
             Annuler
           </Button>
           <Button 
             onClick={handleJoinGame}
             disabled={!canJoin}
-            className="bg-[#FFD700] hover:bg-[#e6c200] text-[#0C0E14] font-nubernext-extended-bold disabled:opacity-50"
+            className="bg-[#FFD700] hover:bg-[#e6c200] text-[#0C0E14] font-nubernext-extended-bold disabled:opacity-50 w-full"
           >
             {isJoining ? (
               <div className="flex items-center gap-2">
