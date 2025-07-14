@@ -406,6 +406,15 @@ def admin_page():
             </div>
             __TABLES_SECTION__
             <div class="section">
+                <h2>🎯 Simulation Partie En Cours</h2>
+                <p>Sélectionnez une partie active et simulez des goals pour cette partie :</p>
+                <select id="gameSelect">
+                    <option value="">Aucune partie sélectionnée</option>
+                </select>
+                <button onclick="simulateGameGoal('RED')">🔴 Goal Équipe Rouge</button>
+                <button onclick="simulateGameGoal('BLUE')">🔵 Goal Équipe Bleue</button>
+            </div>
+            <div class="section">
                 <h2>🎮 Parties Actives</h2>
                 <button onclick="refreshGames()">🔄 Actualiser</button>
                 <div id="gamesList" class="games"></div>
@@ -467,18 +476,6 @@ def admin_page():
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ side: side })
-                })
-                .then(async res => {
-                    if (res.status === 403) {
-                        const data = await res.json();
-                        alert(data.message || 'Score max déjà atteint pour ce côté !');
-                        return;
-                    }
-                    if (!res.ok) {
-                        alert('Erreur lors de la simulation du but');
-                        return;
-                    }
-                    // Optionnel : feedback visuel de succès
                 });
             }
             function simulateGameGoal(team) {
@@ -543,39 +540,13 @@ def admin_page():
              .replace('__TABLES_SECTION__', render_tables_admin_section())
     return html
 
-# Supprimer la logique de score max et de fin de partie
-# Supprimer is_score_blocked, check_game_end, et tout ce qui concerne win_value, win_condition
-# Supprimer le bloc HTML '🎯 Simulation Partie En Cours' dans la fonction admin_page
-
-# PATCH: Bloquer l’incrémentation dans read_serial()
-def read_serial():
-    if ARDUINO_FAKE_MODE or ser is None:
-        print("⏭️  Thread Arduino désactivé (mode simulation)")
-        return
-    while True:
-        try:
-            if ser.in_waiting > 0:
-                line = ser.readline().decode().strip()
-                if line in score:
-                    # Inversion GAUCHE/DROITE
-                    if line == "GAUCHE":
-                        score["DROITE"] += 1
-                        update_active_game_score("DROITE")
-                    elif line == "DROITE":
-                        score["GAUCHE"] += 1
-                        update_active_game_score("GAUCHE")
-                    emit_score()
-                    update_active_game_score(line)
-        except Exception as e:
-            print(f"Erreur lecture série: {e}")
-            time.sleep(1)
-
-# PATCH: Bloquer l’incrémentation dans /admin/simulate_goal
+# Nouvelle route pour simuler un goal depuis l'admin
 @app.route('/admin/simulate_goal', methods=['POST'])
 def simulate_goal():
     """Simule un goal Arduino depuis la page d'admin"""
     data = request.get_json()
     side = data.get('side')
+    
     if side in score:
         score[side] += 1
         emit_score()
@@ -613,6 +584,9 @@ def simulate_game_goal():
         score['DROITE'] += 1  # Sync avec le score Arduino
     else:
         return jsonify({'status': 'error', 'message': 'Équipe invalide'}), 400
+    
+    # Vérifier si la partie est terminée
+    check_game_end(game_code, game_data)
     
     # Émettre les mises à jour
     emit_score()  # Score Arduino global
@@ -667,9 +641,9 @@ def reset_game_score(game_code):
                             'table_id': game['table']['id'],
                             'table_name': game['table']['name'],
                             'game_mode': game['gameMode'],
-                            'winCondition': game['winCondition'],
-                            'winValue': game['winValue'],
-                            'maxGoals': game.get('maxGoals'),
+                            'win_condition': game['winCondition'],
+                            'win_value': game['winValue'],
+                            'max_goals': game.get('maxGoals'),
                             'currentScoreLeft': 0,
                             'currentScoreRight': 0,
                             'created_at': time.time(),
@@ -1013,19 +987,76 @@ def emit_game_update(game_code):
         # Utiliser to= au lieu de room= et enlever broadcast
         socketio.emit('game_update', game_data, to=room_name)
 
+# Thread pour lire les infos série de l'Arduino (désactivé en mode fake)
+def read_serial():
+    if ARDUINO_FAKE_MODE or ser is None:
+        print("⏭️  Thread Arduino désactivé (mode simulation)")
+        return
+    
+    while True:
+        try:
+            if ser.in_waiting > 0:
+                line = ser.readline().decode().strip()
+                if line in score:
+                    # Inversion GAUCHE/DROITE
+                    if line == "GAUCHE":
+                        score["DROITE"] += 1
+                        update_active_game_score("DROITE")
+                    elif line == "DROITE":
+                        score["GAUCHE"] += 1
+                        update_active_game_score("GAUCHE")
+                    emit_score()
+
+                    # Si une partie est en cours, mettre à jour le score de la partie
+                    update_active_game_score(line)
+        except Exception as e:
+            print(f"Erreur lecture série: {e}")
+            time.sleep(1)
+
+def update_active_game_score(side):
+    """Met à jour le score d'une partie active quand l'Arduino envoie un signal"""
+    for game_code, game_data in active_games.items():
+        if game_data['status'] == 'playing':
+            # Vérifier si la partie est déjà terminée (score max atteint)
+            score_left = game_data['currentScoreLeft']
+            score_right = game_data['currentScoreRight']
+            win_value = game_data['win_value']
+            
+            # Empêcher les buts si un joueur a déjà atteint la winValue
+            if score_left >= win_value or score_right >= win_value:
+                print(f"🚫 But ignoré pour {game_code} - Score max déjà atteint ({score_left}-{score_right})")
+                return
+            
+            # Mapping inversé : GAUCHE = DROITE, DROITE = GAUCHE
+            if side == 'GAUCHE':
+                game_data['currentScoreRight'] += 1
+                print(f"⚽ But GAUCHE (inversé) pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
+            elif side == 'DROITE':
+                game_data['currentScoreLeft'] += 1
+                print(f"⚽ But DROITE (inversé) pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
+            
+            # Vérifier si la partie est terminée
+            check_game_end(game_code, game_data)
+            
+            # Notifier tous les clients de la partie
+            socketio.emit('live_score_update', {
+                'game_code': game_code,
+                'scoreLeft': game_data['currentScoreLeft'],
+                'scoreRight': game_data['currentScoreRight'],
+                'status': game_data['status']
+            }, room=f"game_{game_code}")
+            
+            break  # Une seule partie peut être active à la fois
+
 # Dans check_game_end, lors de la détection du gagnant, émettre aussi RED/BLUE
 
 def check_game_end(game_code, game_data):
-    """Vérifie si une partie doit se terminer selon ses conditions (robuste camelCase/snake_case)"""
+    """Vérifie si une partie doit se terminer selon ses conditions"""
     score_left = game_data['currentScoreLeft']
     score_right = game_data['currentScoreRight']
-
-    # Patch: accepter win_condition ou winCondition, win_value ou winValue
-    win_condition = game_data.get('win_condition') or game_data.get('winCondition')
-    win_value = game_data.get('win_value') or game_data.get('winValue')
-
-    if win_condition == 'first_to_goals':
-        target = win_value
+    
+    if game_data['win_condition'] == 'first_to_goals':
+        target = game_data['win_value']
         if score_left >= target or score_right >= target:
             game_data['status'] = 'finished'
             game_data['finishedAt'] = time.time()
@@ -1248,8 +1279,8 @@ def handle_join_game(data):
                             'table_id': game['table']['id'],
                             'table_name': game['table']['name'],
                             'game_mode': game['gameMode'],
-                            'winCondition': game['winCondition'],
-                            'winValue': game['winValue'],
+                            'win_condition': game['winCondition'],
+                            'win_value': game['winValue'],
                             'max_goals': game.get('maxGoals'),
                             'currentScoreLeft': 0,
                             'currentScoreRight': 0,
