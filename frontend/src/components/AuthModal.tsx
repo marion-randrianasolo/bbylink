@@ -157,7 +157,7 @@ export function AuthModal({
     avatarIndex: 0,
     jerseyNumber: "",
     skillLevel: "",
-    position: "",
+    position: "GOAL", // valeur par défaut corrigée
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { login, register, isLoading } = useAuth()
