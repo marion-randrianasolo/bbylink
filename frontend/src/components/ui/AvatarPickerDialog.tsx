@@ -99,17 +99,19 @@ export const AvatarPickerDialog: React.FC<AvatarPickerDialogProps> = ({
         </div>
         {error && <div className="text-red-500 text-sm text-center mb-2">{error}</div>}
         <DialogFooter>
-          <Button
-            type="button"
-            className="w-full bg-[#EA1846] text-white font-bold"
-            onClick={handleValidate}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Modification..." : "Valider"}
-          </Button>
-          <DialogClose asChild>
-            <Button type="button" variant="outline" className="w-full">Annuler</Button>
-          </DialogClose>
+          <div className="flex flex-col sm:flex-row sm:justify-center gap-2 w-full mt-2">
+            <Button
+              type="button"
+              className="w-full sm:w-auto bg-[#EA1846] text-white font-bold"
+              onClick={handleValidate}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Modification..." : "Valider"}
+            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" className="w-full sm:w-auto">Annuler</Button>
+            </DialogClose>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
