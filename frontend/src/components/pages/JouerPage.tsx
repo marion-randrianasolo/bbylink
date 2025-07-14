@@ -313,8 +313,8 @@ export default function JouerPage() {
                     selectedTable === table.id
                       ? 'border-[#EA1846] bg-[#EA1846]/10'
                       : 'border-[#333] hover:border-[#EA1846]/50'
-                  }`}
-                  onClick={() => setSelectedTable(table.id)}
+                  } ${!table.isAvailable ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => table.isAvailable && setSelectedTable(table.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -324,8 +324,8 @@ export default function JouerPage() {
                       <p className="text-[#AAAAAA] text-sm">{table.location}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-green-500 text-sm">Disponible</span>
+                      <div className={`w-2 h-2 rounded-full ${table.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className={`text-sm ${table.isAvailable ? 'text-green-500' : 'text-red-500'}`}>{table.isAvailable ? 'Disponible' : 'Occupée'}</span>
                     </div>
                   </div>
                 </div>
