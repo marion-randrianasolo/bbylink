@@ -219,7 +219,7 @@ export default function BabyFootPosition({
             
             <div className="flex items-center select-none px-3 pb-3 pt-0">
               <div className="flex relative flex-shrink-0 w-8 h-9 items-center flex-col justify-center">
-                <Icon4 className="absolute top-0 left-0 w-8 h-9" style={{ color: selectedPos.color }} />
+                <Icon4 className="absolute top-0 left-0 w-8 h-9" style={{ color: selectedPos?.color || '#EA1846' }} />
                 <p className="font-medium leading-[17.5px] relative text-center text-xs m-0 p-0 text-white">
                   {selectedPos.code}
                 </p>
