@@ -456,9 +456,9 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
           )}
         </div>
 
-        <DialogFooter className="flex flex-col justify-start items-stretch gap-3 w-full px-0">
+        <div className="flex flex-col gap-3 w-full px-4 pt-6">
           <Button 
-            variant="outline" 
+            variant="outline"
             onClick={handleClose}
             disabled={isLoading || isJoining}
             className="w-full border-[#333] text-[#AAAAAA] hover:text-white hover:border-[#555] bg-transparent"
@@ -471,12 +471,15 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
             className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-[#0C0E14] font-nubernext-extended-bold disabled:opacity-50"
           >
             {isJoining ? (
-              <span>Connexion...</span>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-[#0C0E14] border-t-transparent rounded-full animate-spin" />
+                Connexion...
+              </div>
             ) : (
               'Rejoindre la partie'
             )}
           </Button>
-        </DialogFooter>
+        </div>
 
       </DialogContent>
     </Dialog>
