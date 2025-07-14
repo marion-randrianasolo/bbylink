@@ -481,7 +481,7 @@ def admin_page():
             function simulateGameGoal(team) {
                 const gameCode = document.getElementById('gameSelect').value;
                 if (!gameCode) {
-                    alert('Sélectionnez une partie d\'abord');
+                    alert('Sélectionnez une partie d\\'abord');
                     return;
                 }
                 fetch('/admin/simulate_game_goal', {
