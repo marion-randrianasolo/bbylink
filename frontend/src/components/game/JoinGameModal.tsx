@@ -456,7 +456,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
           )}
         </div>
 
-        <DialogFooter className="flex flex-col gap-3 max-w-xs mx-auto w-full">
+        <DialogFooter className="flex flex-col gap-3 px-0 sm:px-8">
           <Button 
             variant="outline" 
             onClick={handleClose}
