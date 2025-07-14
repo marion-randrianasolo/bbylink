@@ -77,7 +77,6 @@
     // Socket.IO : réception des scores
     const socket = io();
     socket.on('score_update', data => {
-      if (gameOver) return;
       const prevL = +leftEl.dataset.prev, prevR = +rightEl.dataset.prev;
       leftEl.textContent  = data.left;
       rightEl.textContent = data.right;
@@ -85,10 +84,6 @@
       if (data.right > prevR) pulse('right');
       leftEl.dataset.prev  = data.left;
       rightEl.dataset.prev = data.right;
-      if (data.left >= WIN_SCORE || data.right >= WIN_SCORE) {
-        gameOver = true;
-        celebrate(data.left >= WIN_SCORE ? leftName : rightName);
-      }
     });
 
     // Pulse des barres
@@ -105,7 +100,6 @@
 
     // Nouvelle partie
     newGameBtn.addEventListener('click', () => {
-      gameOver = false;
       overlay.hidden = false;
       // Réaffiche scoreboard & barres
       document.querySelector('.scoreboard').style.display = 'flex';

@@ -406,15 +406,6 @@ def admin_page():
             </div>
             __TABLES_SECTION__
             <div class="section">
-                <h2>🎯 Simulation Partie En Cours</h2>
-                <p>Sélectionnez une partie active et simulez des goals pour cette partie :</p>
-                <select id="gameSelect">
-                    <option value="">Aucune partie sélectionnée</option>
-                </select>
-                <button onclick="simulateGameGoal('RED')">🔴 Goal Équipe Rouge</button>
-                <button onclick="simulateGameGoal('BLUE')">🔵 Goal Équipe Bleue</button>
-            </div>
-            <div class="section">
                 <h2>🎮 Parties Actives</h2>
                 <button onclick="refreshGames()">🔄 Actualiser</button>
                 <div id="gamesList" class="games"></div>
@@ -552,21 +543,9 @@ def admin_page():
              .replace('__TABLES_SECTION__', render_tables_admin_section())
     return html
 
-# Utilitaire : savoir si le score max est atteint pour un côté
-
-def is_score_blocked(side):
-    # Si aucune partie active, bloquer toute incrémentation
-    any_playing = any(game_data['status'] == 'playing' for game_data in active_games.values())
-    if not any_playing:
-        return True
-    for game_data in active_games.values():
-        if game_data['status'] == 'playing':
-            win_value = game_data['win_value']
-            if side == 'GAUCHE' and game_data['currentScoreLeft'] >= win_value:
-                return True
-            if side == 'DROITE' and game_data['currentScoreRight'] >= win_value:
-                return True
-    return False
+# Supprimer la logique de score max et de fin de partie
+# Supprimer is_score_blocked, check_game_end, et tout ce qui concerne win_value, win_condition
+# Supprimer le bloc HTML '🎯 Simulation Partie En Cours' dans la fonction admin_page
 
 # PATCH: Bloquer l’incrémentation dans read_serial()
 def read_serial():
@@ -578,25 +557,13 @@ def read_serial():
             if ser.in_waiting > 0:
                 line = ser.readline().decode().strip()
                 if line in score:
-                    # Bloquer si score max atteint
-                    if is_score_blocked(line):
-                        print(f"🚫 Incrémentation bloquée pour {line} (score max atteint)")
-                        continue
                     # Inversion GAUCHE/DROITE
                     if line == "GAUCHE":
                         score["DROITE"] += 1
                         update_active_game_score("DROITE")
-                        # PATCH: Check fin de partie
-                        for game_code, game_data in active_games.items():
-                            if game_data['status'] == 'playing':
-                                check_game_end(game_code, game_data)
                     elif line == "DROITE":
                         score["GAUCHE"] += 1
                         update_active_game_score("GAUCHE")
-                        # PATCH: Check fin de partie
-                        for game_code, game_data in active_games.items():
-                            if game_data['status'] == 'playing':
-                                check_game_end(game_code, game_data)
                     emit_score()
                     update_active_game_score(line)
         except Exception as e:
@@ -610,14 +577,8 @@ def simulate_goal():
     data = request.get_json()
     side = data.get('side')
     if side in score:
-        if is_score_blocked(side):
-            return jsonify({'status': 'blocked', 'side': side, 'message': 'Score max déjà atteint'}), 403
         score[side] += 1
         emit_score()
-        # PATCH: Check fin de partie
-        for game_code, game_data in active_games.items():
-            if game_data['status'] == 'playing':
-                check_game_end(game_code, game_data)
         
         # Si une partie est en cours, mettre à jour le score de la partie
         if ARDUINO_FAKE_MODE:
@@ -652,9 +613,6 @@ def simulate_game_goal():
         score['DROITE'] += 1  # Sync avec le score Arduino
     else:
         return jsonify({'status': 'error', 'message': 'Équipe invalide'}), 400
-    
-    # Vérifier si la partie est terminée
-    check_game_end(game_code, game_data)
     
     # Émettre les mises à jour
     emit_score()  # Score Arduino global
