@@ -369,25 +369,25 @@ def render_tables_admin_section():
 @app.route('/admin')
 def admin_page():
     """Page d'administration pour contrôler manuellement les événements"""
-    return '''
+    html = '''
     <!DOCTYPE html>
     <html>
     <head>
         <title>BabyLink - Administration</title>
         <style>
-            body {{ font-family: Arial, sans-serif; margin: 20px; background: #0C0E14; color: white; }}
-            .container {{ max-width: 800px; margin: 0 auto; }}
-            .section {{ background: #1a1d24; padding: 20px; margin: 20px 0; border-radius: 8px; }}
-            button {{ background: #EA1846; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer; }}
-            button:hover {{ background: #c41538; }}
-            input, select {{ padding: 8px; margin: 5px; border-radius: 4px; border: 1px solid #333; background: #2a2d34; color: white; }}
-            .score {{ font-size: 24px; margin: 10px 0; }}
-            .games {{ margin-top: 20px; }}
-            .game-item {{ background: #2a2d34; padding: 15px; margin: 10px 0; border-radius: 4px; }}
-            .status {{ display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }}
-            .status.waiting {{ background: #f39c12; }}
-            .status.playing {{ background: #27ae60; }}
-            .status.finished {{ background: #e74c3c; }}
+            body { font-family: Arial, sans-serif; margin: 20px; background: #0C0E14; color: white; }
+            .container { max-width: 800px; margin: 0 auto; }
+            .section { background: #1a1d24; padding: 20px; margin: 20px 0; border-radius: 8px; }
+            button { background: #EA1846; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer; }
+            button:hover { background: #c41538; }
+            input, select { padding: 8px; margin: 5px; border-radius: 4px; border: 1px solid #333; background: #2a2d34; color: white; }
+            .score { font-size: 24px; margin: 10px 0; }
+            .games { margin-top: 20px; }
+            .game-item { background: #2a2d34; padding: 15px; margin: 10px 0; border-radius: 4px; }
+            .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+            .status.waiting { background: #f39c12; }
+            .status.playing { background: #27ae60; }
+            .status.finished { background: #e74c3c; }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     </head>
@@ -397,14 +397,14 @@ def admin_page():
             <div class="section">
                 <h2>📊 Score Arduino Global</h2>
                 <div class="score">
-                    Gauche: <span id="scoreLeft">{score_gauche}</span> | 
-                    Droite: <span id="scoreRight">{score_droite}</span>
+                    Gauche: <span id="scoreLeft">__SCORE_GAUCHE__</span> | 
+                    Droite: <span id="scoreRight">__SCORE_DROITE__</span>
                 </div>
                 <button onclick="simulateGoal('GAUCHE')">⚽ Goal Gauche</button>
                 <button onclick="simulateGoal('DROITE')">⚽ Goal Droite</button>
                 <button onclick="resetScore()">🔄 Reset Score</button>
             </div>
-            {tables_section}
+            __TABLES_SECTION__
             <div class="section">
                 <h2>🎯 Simulation Partie En Cours</h2>
                 <p>Sélectionnez une partie active et simulez des goals pour cette partie :</p>
@@ -421,7 +421,6 @@ def admin_page():
             </div>
         </div>
         <script>
-            // Gestion des tables (extrait de render_tables_admin_section)
             let updatingTable = null;
             function refreshTables() {
               fetch('/api/tables')
@@ -467,7 +466,6 @@ def admin_page():
               const socketTables = io();
               socketTables.on('tables_update', refreshTables);
             }
-            // Gestion du score et des parties
             const socket = io();
             socket.on('score_update', function(data) {
                 document.getElementById('scoreLeft').textContent = data.left;
@@ -531,17 +529,16 @@ def admin_page():
                     select.appendChild(option);
                 });
             }
-            // Actualiser au chargement
             refreshGames();
-            setInterval(refreshGames, 5000); // Auto-refresh toutes les 5 secondes
+            setInterval(refreshGames, 5000);
         </script>
     </body>
     </html>
-    '''.format(
-        score_gauche=score['GAUCHE'],
-        score_droite=score['DROITE'],
-        tables_section=render_tables_admin_section()
-    )
+    '''
+    html = html.replace('__SCORE_GAUCHE__', str(score['GAUCHE'])) \
+             .replace('__SCORE_DROITE__', str(score['DROITE'])) \
+             .replace('__TABLES_SECTION__', render_tables_admin_section())
+    return html
 
 # Nouvelle route pour simuler un goal depuis l'admin
 @app.route('/admin/simulate_goal', methods=['POST'])
