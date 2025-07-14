@@ -281,7 +281,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg bg-[#101118] border-[#333] text-white">
+      <DialogContent className="sm:max-w-lg bg-[#101118] border-[#333] text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-nubernext-extended-bold text-white flex items-center gap-3">
             <div className="w-8 h-8 bg-[#FFD700] rounded-full flex items-center justify-center">
