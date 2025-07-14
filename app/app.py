@@ -383,7 +383,7 @@ def render_tables_admin_section():
                 style="background:${!table.isAvailable ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
                 ${table.isAvailable ? 'disabled' : ''}
                 ${updatingTable === table.id ? 'disabled' : ''}
-              >Dispo${!table.isAvailable ? ' ✓' : ''}</button>
+              >Dispo${table.isAvailable ? ' ✓' : ''}</button>
               <button
                 onclick="setTable(${table.id}, false)"
                 style="background:${table.isAvailable ? '#e74c3c' : '#a71d2a'};color:white;font-weight:bold;"
@@ -396,18 +396,16 @@ def render_tables_admin_section():
     }
     function setTable(id, dispo) {
       updatingTable = id;
-      // Ne pas rafraîchir tout de suite, attendre la réponse PATCH
       fetch(`/api/tables/${id}/set-availability`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({is_available: dispo})
       }).then(() => {
         updatingTable = null;
-        setTimeout(refreshTables, 300); // Petit délai pour la synchro BDD
+        setTimeout(refreshTables, 300);
       });
     }
     refreshTables();
-    // Synchro temps réel via Socket.IO
     if (typeof io !== 'undefined') {
       const socket = io();
       socket.on('tables_update', refreshTables);
