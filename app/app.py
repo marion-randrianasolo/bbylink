@@ -1058,12 +1058,16 @@ def emit_game_update(game_code):
 # Dans check_game_end, lors de la détection du gagnant, émettre aussi RED/BLUE
 
 def check_game_end(game_code, game_data):
-    """Vérifie si une partie doit se terminer selon ses conditions"""
+    """Vérifie si une partie doit se terminer selon ses conditions (robuste camelCase/snake_case)"""
     score_left = game_data['currentScoreLeft']
     score_right = game_data['currentScoreRight']
-    
-    if game_data['win_condition'] == 'first_to_goals':
-        target = game_data['win_value']
+
+    # Patch: accepter win_condition ou winCondition, win_value ou winValue
+    win_condition = game_data.get('win_condition') or game_data.get('winCondition')
+    win_value = game_data.get('win_value') or game_data.get('winValue')
+
+    if win_condition == 'first_to_goals':
+        target = win_value
         if score_left >= target or score_right >= target:
             game_data['status'] = 'finished'
             game_data['finishedAt'] = time.time()
