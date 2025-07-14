@@ -374,36 +374,36 @@ def render_tables_admin_section():
           container.innerHTML = data.tables.map(table => `
             <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
               <strong>${table.name}</strong>
-              <span style="font-weight:bold;color:${table.is_available ? 'green' : 'red'};">
-                ${table.is_available ? 'Disponible' : 'Occupée'}
+              <span style="font-weight:bold;color:${table.isAvailable ? 'green' : 'red'};">
+                ${table.isAvailable ? 'Disponible' : 'Occupée'}
               </span>
               ${updatingTable === table.id ? '<span style=\"color:#FFD700;\">⏳</span>' : ''}
               <button
                 onclick="setTable(${table.id}, true)"
-                style="background:${!table.is_available ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
-                ${table.is_available ? 'disabled' : ''}
+                style="background:${!table.isAvailable ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
+                ${table.isAvailable ? 'disabled' : ''}
                 ${updatingTable === table.id ? 'disabled' : ''}
-              >Dispo${!table.is_available ? ' ✓' : ''}</button>
+              >Dispo${!table.isAvailable ? ' ✓' : ''}</button>
               <button
                 onclick="setTable(${table.id}, false)"
-                style="background:${table.is_available ? '#e74c3c' : '#a71d2a'};color:white;font-weight:bold;"
-                ${!table.is_available ? 'disabled' : ''}
+                style="background:${table.isAvailable ? '#e74c3c' : '#a71d2a'};color:white;font-weight:bold;"
+                ${!table.isAvailable ? 'disabled' : ''}
                 ${updatingTable === table.id ? 'disabled' : ''}
-              >Occupée${!table.is_available ? ' ✓' : ''}</button>
+              >Occupée${!table.isAvailable ? ' ✓' : ''}</button>
             </div>
           `).join('');
         });
     }
     function setTable(id, dispo) {
       updatingTable = id;
-      refreshTables();
+      // Ne pas rafraîchir tout de suite, attendre la réponse PATCH
       fetch(`/api/tables/${id}/set-availability`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({is_available: dispo})
       }).then(() => {
         updatingTable = null;
-        refreshTables();
+        setTimeout(refreshTables, 300); // Petit délai pour la synchro BDD
       });
     }
     refreshTables();
