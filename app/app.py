@@ -423,114 +423,114 @@ def admin_page():
         <script>
             // Gestion des tables (extrait de render_tables_admin_section)
             let updatingTable = null;
-            function refreshTables() {{
+            function refreshTables() {
               fetch('/api/tables')
                 .then(r => r.json())
-                .then(data => {{
+                .then(data => {
                   const container = document.getElementById('tablesList');
                   container.innerHTML = data.tables.map(table => `
                     <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
-                      <strong>${{table.name}}</strong>
-                      <span style="font-weight:bold;color:${{table.isAvailable ? 'green' : 'red'}};">
-                        ${{table.isAvailable ? 'Disponible' : 'Occupée'}}
+                      <strong>${table.name}</strong>
+                      <span style="font-weight:bold;color:${table.isAvailable ? 'green' : 'red'};">
+                        ${table.isAvailable ? 'Disponible' : 'Occupée'}
                       </span>
-                      ${{updatingTable === table.id ? '<span style=\\"color:#FFD700;\\">⏳</span>' : ''}}
+                      ${updatingTable === table.id ? '<span style="color:#FFD700;">⏳</span>' : ''}
                       <button
-                        onclick="setTable(${{table.id}}, true)"
-                        style="background:${{!table.isAvailable ? '#27ae60' : '#EA1846'}};color:white;font-weight:bold;"
-                        ${{table.isAvailable ? 'disabled' : ''}}
-                        ${{updatingTable === table.id ? 'disabled' : ''}}
-                      >Dispo${{table.isAvailable ? ' ✓' : ''}}</button>
+                        onclick="setTable(${table.id}, true)"
+                        style="background:${!table.isAvailable ? '#27ae60' : '#EA1846'};color:white;font-weight:bold;"
+                        ${table.isAvailable ? 'disabled' : ''}
+                        ${updatingTable === table.id ? 'disabled' : ''}
+                      >Dispo${table.isAvailable ? ' ✓' : ''}</button>
                       <button
-                        onclick="setTable(${{table.id}}, false)"
-                        style="background:${{table.isAvailable ? '#e74c3c' : '#a71d2a'}};color:white;font-weight:bold;"
-                        ${{!table.isAvailable ? 'disabled' : ''}}
-                        ${{updatingTable === table.id ? 'disabled' : ''}}
-                      >Occupée${{!table.isAvailable ? ' ✓' : ''}}</button>
+                        onclick="setTable(${table.id}, false)"
+                        style="background:${table.isAvailable ? '#e74c3c' : '#a71d2a'};color:white;font-weight:bold;"
+                        ${!table.isAvailable ? 'disabled' : ''}
+                        ${updatingTable === table.id ? 'disabled' : ''}
+                      >Occupée${!table.isAvailable ? ' ✓' : ''}</button>
                     </div>
                   `).join('');
-                }});
-            }}
-            function setTable(id, dispo) {{
+                });
+            }
+            function setTable(id, dispo) {
               updatingTable = id;
-              fetch(`/api/tables/${{id}}/set-availability`, {{
+              fetch(`/api/tables/${id}/set-availability`, {
                 method: 'POST',
-                headers: {{'Content-Type': 'application/json'}},
-                body: JSON.stringify({{is_available: dispo}})
-              }}).then(() => {{
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({is_available: dispo})
+              }).then(() => {
                 updatingTable = null;
                 setTimeout(refreshTables, 300);
-              }});
-            }}
+              });
+            }
             refreshTables();
-            if (typeof io !== 'undefined') {{
+            if (typeof io !== 'undefined') {
               const socketTables = io();
               socketTables.on('tables_update', refreshTables);
-            }}
+            }
             // Gestion du score et des parties
             const socket = io();
-            socket.on('score_update', function(data) {{
+            socket.on('score_update', function(data) {
                 document.getElementById('scoreLeft').textContent = data.left;
                 document.getElementById('scoreRight').textContent = data.right;
-            }});
-            function simulateGoal(side) {{
-                fetch('/admin/simulate_goal', {{
+            });
+            function simulateGoal(side) {
+                fetch('/admin/simulate_goal', {
                     method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ side: side }})
-                }});
-            }}
-            function simulateGameGoal(team) {{
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ side: side })
+                });
+            }
+            function simulateGameGoal(team) {
                 const gameCode = document.getElementById('gameSelect').value;
-                if (!gameCode) {{
+                if (!gameCode) {
                     alert('Sélectionnez une partie d\'abord');
                     return;
-                }}
-                fetch('/admin/simulate_game_goal', {{
+                }
+                fetch('/admin/simulate_game_goal', {
                     method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ game_code: gameCode, team: team }})
-                }});
-            }}
-            function resetScore() {{
-                fetch('/reset', {{ method: 'POST' }});
-            }}
-            function refreshGames() {{
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ game_code: gameCode, team: team })
+                });
+            }
+            function resetScore() {
+                fetch('/reset', { method: 'POST' });
+            }
+            function refreshGames() {
                 fetch('/api/games')
                     .then(r => r.json())
-                    .then(data => {{
+                    .then(data => {
                         updateGamesList(data.games);
                         updateGameSelect(data.games);
-                    }});
-            }}
-            function updateGamesList(games) {{
+                    });
+            }
+            function updateGamesList(games) {
                 const container = document.getElementById('gamesList');
-                if (games.length === 0) {{
+                if (games.length === 0) {
                     container.innerHTML = '<p>Aucune partie active</p>';
                     return;
-                }}
+                }
                 container.innerHTML = games.map(game => `
                     <div class="game-item">
-                        <strong>Code: ${{game.code}}</strong>
-                        <span class="status ${{game.status}}">${{game.status}}</span>
+                        <strong>Code: ${game.code}</strong>
+                        <span class="status ${game.status}">${game.status}</span>
                         <br>
-                        Hôte: ${{game.host_name}} | Mode: ${{game.game_mode}}
+                        Hôte: ${game.host_name} | Mode: ${game.game_mode}
                         <br>
-                        Joueurs: ${{game.players.length}}/${{game.max_players}}
-                        ${{game.status === 'playing' ? `<br>Score: ${{game.currentScoreLeft}} - ${{game.currentScoreRight}}` : ''}}
+                        Joueurs: ${game.players.length}/${game.max_players}
+                        ${game.status === 'playing' ? `<br>Score: ${game.currentScoreLeft} - ${game.currentScoreRight}` : ''}
                     </div>
                 `).join('');
-            }}
-            function updateGameSelect(games) {{
+            }
+            function updateGameSelect(games) {
                 const select = document.getElementById('gameSelect');
                 select.innerHTML = '<option value="">Aucune partie sélectionnée</option>';
-                games.filter(g => g.status === 'playing').forEach(game => {{
+                games.filter(g => g.status === 'playing').forEach(game => {
                     const option = document.createElement('option');
                     option.value = game.code;
-                    option.textContent = `${{game.code}} - ${{game.host_name}} (${{game.currentScoreLeft}}-${{game.currentScoreRight}})`;
+                    option.textContent = `${game.code} - ${game.host_name} (${game.currentScoreLeft}-${game.currentScoreRight})`;
                     select.appendChild(option);
-                }});
-            }}
+                });
+            }
             // Actualiser au chargement
             refreshGames();
             setInterval(refreshGames, 5000); // Auto-refresh toutes les 5 secondes
