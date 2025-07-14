@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { socketService } from '@/lib/socket'
-import AvatarService from '@/lib/avatarService'
 
 const FLASK_API = process.env.NEXT_PUBLIC_FLASK_API_URL!
 
@@ -457,7 +456,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
           )}
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-3">
+        <DialogFooter className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button 
             variant="outline" 
             onClick={handleClose}
