@@ -14,6 +14,8 @@ import PlayerXPIndicator from '@/components/ui/PlayerXPIndicator'
 import BabyFootPosition, { POSITIONS } from '@/components/babyfoot_component/BabyFootPosition'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { AvatarPickerDialog } from "../ui/AvatarPickerDialog";
+import { useState } from "react";
 
 /**
  * Jersey component that lets users view their number
@@ -64,7 +66,10 @@ const JerseyDisplay = ({ number }: { number: string }) => {
  * @returns {JSX.Element} Interface de profil avec stats et options
  */
 export default function ProfilPage() {
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth();
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   if (!user) return null
 
@@ -100,9 +105,39 @@ export default function ProfilPage() {
                 <p className="text-[#EA1846] font-nubernext-extended-bold mb-4">
                   XP: {user.xp ?? 0}
                 </p>
-                <button className="w-full bg-[#EA1846] text-white py-3 rounded-lg font-nubernext-extended-bold hover:bg-[#d41539] transition-colors">
-                  Modifier Avatar
+                <button
+                  className="w-full bg-[#EA1846] text-white py-3 rounded-lg font-nubernext-extended-bold hover:bg-[#d41539] transition-colors"
+                  onClick={() => setShowAvatarModal(true)}
+                  disabled={avatarLoading}
+                >
+                  {avatarLoading ? "Modification..." : "Modifier Avatar"}
                 </button>
+                {avatarError && <div className="text-red-500 text-sm text-center mt-2">{avatarError}</div>}
+                <AvatarPickerDialog
+                  open={showAvatarModal}
+                  onClose={() => setShowAvatarModal(false)}
+                  currentAvatar={user.avatar || ""}
+                  onAvatarSelected={async (newAvatarUrl) => {
+                    setAvatarLoading(true);
+                    setAvatarError(null);
+                    try {
+                      const res = await fetch("/api/auth/update-avatar", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: user.email, avatar: newAvatarUrl })
+                      });
+                      if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || "Erreur lors de la modification de l’avatar");
+                      }
+                      await refreshProfile();
+                    } catch (e: any) {
+                      setAvatarError(e.message || "Erreur lors de la modification de l’avatar");
+                    } finally {
+                      setAvatarLoading(false);
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>
