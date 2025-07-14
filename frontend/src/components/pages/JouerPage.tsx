@@ -596,7 +596,7 @@ export default function JouerPage() {
                 <Button 
                   onClick={handleCreateNext}
                   disabled={
-                    (createStep === 1 && !selectedTable) ||
+                    (createStep === 1 && (!selectedTable || !tables.find(t => t.id === selectedTable)?.isAvailable)) ||
                     (createStep === 2 && !gameMode) ||
                     (createStep === 3 && !winCondition)
                   }
