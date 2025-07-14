@@ -1013,7 +1013,13 @@ def read_serial():
             if ser.in_waiting > 0:
                 line = ser.readline().decode().strip()
                 if line in score:
-                    score[line] += 1
+                    # Inversion GAUCHE/DROITE
+                    if line == "GAUCHE":
+                        score["DROITE"] += 1
+                        update_active_game_score("DROITE")
+                    elif line == "DROITE":
+                        score["GAUCHE"] += 1
+                        update_active_game_score("GAUCHE")
                     emit_score()
 
                     # Si une partie est en cours, mettre à jour le score de la partie
@@ -1036,13 +1042,13 @@ def update_active_game_score(side):
                 print(f"🚫 But ignoré pour {game_code} - Score max déjà atteint ({score_left}-{score_right})")
                 return
             
-            # Mapping cohérent avec Next.js : GAUCHE = RED, DROITE = BLUE
+            # Mapping inversé : GAUCHE = DROITE, DROITE = GAUCHE
             if side == 'GAUCHE':
-                game_data['currentScoreLeft'] += 1
-                print(f"⚽ But GAUCHE pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
-            elif side == 'DROITE':
                 game_data['currentScoreRight'] += 1
-                print(f"⚽ But DROITE pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
+                print(f"⚽ But GAUCHE (inversé) pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
+            elif side == 'DROITE':
+                game_data['currentScoreLeft'] += 1
+                print(f"⚽ But DROITE (inversé) pour {game_code} - Nouveau score: {game_data['currentScoreLeft']}-{game_data['currentScoreRight']}")
             
             # Vérifier si la partie est terminée
             check_game_end(game_code, game_data)
