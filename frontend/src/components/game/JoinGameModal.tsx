@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { socketService } from '@/lib/socket'
-import AvatarService from '@/lib/avatarService'
 
 const FLASK_API = process.env.NEXT_PUBLIC_FLASK_API_URL!
 
@@ -281,7 +280,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg bg-[#101118] border-[#333] text-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg bg-[#101118] border-[#333] text-white">
         <DialogHeader>
           <DialogTitle className="text-2xl font-nubernext-extended-bold text-white flex items-center gap-3">
             <div className="w-8 h-8 bg-[#FFD700] rounded-full flex items-center justify-center">
@@ -296,7 +295,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto max-h-[60vh]">
           {/* Code Input */}
           <div className="space-y-3">
             <Label className="text-white font-nubernext-extended-bold">Code de la partie</Label>
@@ -325,7 +324,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
                   variant="outline"
                   size="sm"
                   onClick={() => setGameCode(code)}
-                  className="border-[#333] text-[#AAAAAA] hover:text-white hover:border-[#FFD700] bg-transparent text-xs"
+                  className="border-[#333] text-[#AAAAAA] hover:text-white hover:border-[#FFD700] bg-transparent text-xs mx-auto"
                 >
                   {code}
                 </Button>
@@ -457,7 +456,7 @@ export default function JoinGameModal({ isOpen, onClose, onGameJoined, initialCo
           )}
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-3">
+        <DialogFooter className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button 
             variant="outline" 
             onClick={handleClose}
